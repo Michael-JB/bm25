@@ -1,0 +1,35 @@
+[package]
+name = "bm25"
+version = "0.1.0"
+description = "BM25 embedder and search engine"
+repository = "https://github.com/Michael-JB/bm25"
+license = "MIT"
+edition = "2021"
+keywords = ["bm25", "sparse", "embed", "search", "nlp"]
+categories = ["algorithms", "text-processing"]
+authors = ["Michael <michael@ramyun.co.uk>"]
+exclude = [
+  ".github/**",
+  "/snapshots/**",
+  "/data/**",
+]
+
+[dependencies]
+cached = "0.53.1"
+fxhash = "0.2.1"
+rust-stemmers = "1.2.0"
+stop-words = "0.8.0"
+whichlang = "0.1.0"
+
+[dev-dependencies]
+csv = "1.3.0"
+divan = "0.1.14"
+insta = "1.39.0"
+
+[[bench]]
+name = "embedder"
+harness = false
+
+[[bench]]
+name = "search"
+harness = false

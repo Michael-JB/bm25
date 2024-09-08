@@ -15,6 +15,7 @@ exclude = [
 ]
 
 [features]
+# With parallelism enabled, batch fitting and embedding jobs happen in parallel.
 parallelism = ["dep:rayon"]
 
 [dependencies]

@@ -220,6 +220,16 @@ search_engine.remove(&document_id);
 assert_eq!(search_engine.get(&document_id), None);
 ```
 
+### Working with a large corpus
+
+If your corpus is large, fitting an embedder and generating embeddings can be slow. Fortunately,
+these tasks can both be trivially parallelised via the `parallelism` feature, which implements
+data parallelism using [Rayon](https://crates.io/crates/rayon).
+
+```sh
+cargo add bm25 --features parallelism
+```
+
 ## License
 
 [MIT License](https://github.com/Michael-JB/bm25/blob/main/LICENSE)

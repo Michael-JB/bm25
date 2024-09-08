@@ -45,3 +45,23 @@ fn dimension<T: EmbeddingDimension>(bencher: Bencher) {
         })
         .bench_values(|embedder| embedder.embed(ENGLISH_TEXT));
 }
+
+#[divan::bench]
+fn fit_to_corpus(bencher: Bencher) {
+    let corpus = [ENGLISH_TEXT; 5000];
+    // Run once beforehand to warm up the cache
+    let _ = EmbedderBuilder::<u32>::with_fit_to_corpus(Language::English, &corpus).build();
+
+    bencher
+        .bench(|| EmbedderBuilder::<u32>::with_fit_to_corpus(Language::English, &corpus).build());
+}
+
+#[divan::bench]
+fn batch_embed(bencher: Bencher) {
+    let corpus = [ENGLISH_TEXT; 5000];
+    let embedder = EmbedderBuilder::<u32>::with_fit_to_corpus(Language::English, &corpus).build();
+    // Run once beforehand to warm up the cache
+    embedder.embed(ENGLISH_TEXT);
+
+    bencher.bench(|| embedder.batch_embed(&corpus));
+}

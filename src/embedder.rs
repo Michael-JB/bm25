@@ -2,6 +2,8 @@ pub use crate::tokenizer::LanguageMode;
 
 use crate::tokenizer::Tokenizer;
 use fxhash::{hash, hash32, hash64};
+#[cfg(feature = "parallelism")]
+use rayon::prelude::*;
 use std::{
     collections::HashMap,
     fmt::{self, Debug, Display},
@@ -13,7 +15,7 @@ pub type DefaultEmbeddingDimension = u32;
 
 /// Represents a document embedded in a D-dimensional space.
 /// The structure and naming of this struct matches the common format for BM25 embeddings.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub struct Embedding<D: EmbeddingDimension = DefaultEmbeddingDimension> {
     /// The index of each token in the embedding space, where indices\[i\] corresponds to the ith token.
     pub indices: Vec<D>,
@@ -41,7 +43,7 @@ pub struct Embedder<D: EmbeddingDimension = DefaultEmbeddingDimension> {
 }
 
 /// A trait for embedding. Implement this to customise the embedding space and function.
-pub trait EmbeddingDimension: Eq + Hash + Clone + Debug {
+pub trait EmbeddingDimension: Eq + Hash + Clone + Debug + Send + Sync {
     /// Embeds a token into the embedding space.
     fn embed(token: &str) -> Self;
 }
@@ -64,12 +66,22 @@ impl EmbeddingDimension for usize {
     }
 }
 
-pub(crate) const FALLBACK_AVGDL: f32 = 256.0;
-
 impl<D: EmbeddingDimension> Embedder<D> {
+    const FALLBACK_AVGDL: f32 = 256.0;
+
     /// Returns the average document length used by the embedder.
     pub fn avgdl(&self) -> f32 {
         self.avgdl
+    }
+
+    /// Embeds a batch of texts into the embedding space. Use the [parallelism] feature to speed
+    /// this up for large batches.
+    pub fn batch_embed(&self, texts: &[&str]) -> Vec<Embedding<D>> {
+        #[cfg(not(feature = "parallelism"))]
+        let text_iter = texts.iter();
+        #[cfg(feature = "parallelism")]
+        let text_iter = texts.par_iter();
+        text_iter.map(|text| self.embed(text)).collect()
     }
 
     /// Embeds the given text into the embedding space.
@@ -77,7 +89,7 @@ impl<D: EmbeddingDimension> Embedder<D> {
         let tokens = self.tokenizer.tokenize(text);
 
         let avgdl = if self.avgdl <= 0.0 {
-            FALLBACK_AVGDL
+            Self::FALLBACK_AVGDL
         } else {
             self.avgdl
         };
@@ -127,13 +139,14 @@ impl<D: EmbeddingDimension> EmbedderBuilder<D> {
             k1: 1.2,
             b: 0.75,
             avgdl,
-            language_mode: LanguageMode::Detect,
+            language_mode: LanguageMode::default(),
             embedding_dimension: PhantomData,
         }
     }
 
     /// Constructs a new EmbedderBuilder with its average document length fit to the given corpus.
     /// Use this if you have the full corpus (or a sample of it) available in advance.
+    /// Use the [parallelism] feature to speed this up for large corpora.
     pub fn with_fit_to_corpus(
         language_mode: impl Into<LanguageMode>,
         corpus: &[&str],
@@ -142,10 +155,13 @@ impl<D: EmbeddingDimension> EmbedderBuilder<D> {
         let tokenizer = Tokenizer::new(&language_mode);
 
         let avgdl = if corpus.is_empty() {
-            FALLBACK_AVGDL
+            Embedder::<D>::FALLBACK_AVGDL
         } else {
-            let total_len: u64 = corpus
-                .iter()
+            #[cfg(not(feature = "parallelism"))]
+            let corpus_iter = corpus.iter();
+            #[cfg(feature = "parallelism")]
+            let corpus_iter = corpus.par_iter();
+            let total_len: u64 = corpus_iter
                 .map(|doc| tokenizer.tokenize(doc).len() as u64)
                 .sum();
             (total_len as f64 / corpus.len() as f64) as f32
@@ -207,11 +223,10 @@ mod tests {
 
     use super::*;
 
-    fn embed_recipes(recipe_file: &str) -> Vec<Embedding> {
+    fn embed_recipes(recipe_file: &str, language_mode: LanguageMode) -> Vec<Embedding> {
         let recipes = read_recipes(recipe_file);
-
-        let bm25_embedder = EmbedderBuilder::with_fit_to_corpus(
-            LanguageMode::Detect,
+        let embedder = EmbedderBuilder::with_fit_to_corpus(
+            language_mode,
             &recipes
                 .iter()
                 .map(|Recipe { recipe, .. }| recipe.as_str())
@@ -219,10 +234,12 @@ mod tests {
         )
         .build();
 
-        recipes
-            .iter()
-            .map(|Recipe { recipe, .. }| bm25_embedder.embed(recipe))
-            .collect::<Vec<_>>()
+        embedder.batch_embed(
+            &recipes
+                .iter()
+                .map(|Recipe { recipe, .. }| recipe.as_str())
+                .collect::<Vec<_>>(),
+        )
     }
 
     #[test]
@@ -262,6 +279,28 @@ mod tests {
     }
 
     #[test]
+    fn it_handles_empty_corpus() {
+        let embedder = EmbedderBuilder::<u32>::with_fit_to_corpus(Language::English, &[]).build();
+
+        let embedding = embedder.embed("space station");
+
+        assert!(!embedding.indices.is_empty());
+        assert!(!embedding.values.is_empty());
+    }
+
+    #[test]
+    fn batch_embedding_is_consistent() {
+        let corpus = ["The fire crackled, casting flickering shadows on the cabin walls."; 1000];
+        let embedder = EmbedderBuilder::<u32>::with_avgdl(7.0)
+            .language_mode(Language::English)
+            .build();
+
+        let embeddings = embedder.batch_embed(&corpus);
+
+        assert!(embeddings.windows(2).all(|e| e[0] == e[1]));
+    }
+
+    #[test]
     fn it_handles_empty_input() {
         let embedder = EmbedderBuilder::<u32>::with_avgdl(1.0).build();
 
@@ -282,9 +321,7 @@ mod tests {
             }
         }
 
-        let bm25_embedder = EmbedderBuilder::<MyType>::with_avgdl(2.0)
-            .language_mode(LanguageMode::Detect)
-            .build();
+        let bm25_embedder = EmbedderBuilder::<MyType>::with_avgdl(2.0).build();
 
         let embedding = bm25_embedder.embed("space station");
 
@@ -293,7 +330,7 @@ mod tests {
 
     #[test]
     fn it_matches_snapshot_en() {
-        let embeddings = embed_recipes("recipes_en.csv");
+        let embeddings = embed_recipes("recipes_en.csv", LanguageMode::Fixed(Language::English));
 
         insta::with_settings!({snapshot_path => "../snapshots"}, {
             assert_debug_snapshot!(embeddings);
@@ -302,7 +339,7 @@ mod tests {
 
     #[test]
     fn it_matches_snapshot_de() {
-        let embeddings = embed_recipes("recipes_de.csv");
+        let embeddings = embed_recipes("recipes_de.csv", LanguageMode::Fixed(Language::German));
 
         insta::with_settings!({snapshot_path => "../snapshots"}, {
             assert_debug_snapshot!(embeddings);

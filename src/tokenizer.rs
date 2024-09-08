@@ -1,6 +1,7 @@
 use cached::proc_macro::cached;
-use rust_stemmers::{Algorithm, Stemmer};
+use rust_stemmers::{Algorithm as StemmingAlgorithm, Stemmer};
 use std::collections::HashSet;
+use stop_words::LANGUAGE as StopWordLanguage;
 use whichlang::Lang as DetectedLanguage;
 
 /// Languages supported by the tokenizer.
@@ -28,9 +29,10 @@ pub enum Language {
 
 /// The language mode used by the tokenizer. This determines the algorithm used for stemming and
 /// the dictionary of stopwords.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum LanguageMode {
     /// Automatically detect the language. Note that this adds a small performance overhead.
+    #[default]
     Detect,
     /// Use a fixed language.
     Fixed(Language),
@@ -67,59 +69,59 @@ impl TryFrom<DetectedLanguage> for Language {
     }
 }
 
-impl From<&Language> for Algorithm {
+impl From<&Language> for StemmingAlgorithm {
     fn from(language: &Language) -> Self {
         match language {
-            Language::Arabic => Algorithm::Arabic,
-            Language::Danish => Algorithm::Danish,
-            Language::Dutch => Algorithm::Dutch,
-            Language::English => Algorithm::English,
-            Language::French => Algorithm::French,
-            Language::German => Algorithm::German,
-            Language::Greek => Algorithm::Greek,
-            Language::Hungarian => Algorithm::Hungarian,
-            Language::Italian => Algorithm::Italian,
-            Language::Norwegian => Algorithm::Norwegian,
-            Language::Portuguese => Algorithm::Portuguese,
-            Language::Romanian => Algorithm::Romanian,
-            Language::Russian => Algorithm::Russian,
-            Language::Spanish => Algorithm::Spanish,
-            Language::Swedish => Algorithm::Swedish,
-            Language::Tamil => Algorithm::Tamil,
-            Language::Turkish => Algorithm::Turkish,
+            Language::Arabic => StemmingAlgorithm::Arabic,
+            Language::Danish => StemmingAlgorithm::Danish,
+            Language::Dutch => StemmingAlgorithm::Dutch,
+            Language::English => StemmingAlgorithm::English,
+            Language::French => StemmingAlgorithm::French,
+            Language::German => StemmingAlgorithm::German,
+            Language::Greek => StemmingAlgorithm::Greek,
+            Language::Hungarian => StemmingAlgorithm::Hungarian,
+            Language::Italian => StemmingAlgorithm::Italian,
+            Language::Norwegian => StemmingAlgorithm::Norwegian,
+            Language::Portuguese => StemmingAlgorithm::Portuguese,
+            Language::Romanian => StemmingAlgorithm::Romanian,
+            Language::Russian => StemmingAlgorithm::Russian,
+            Language::Spanish => StemmingAlgorithm::Spanish,
+            Language::Swedish => StemmingAlgorithm::Swedish,
+            Language::Tamil => StemmingAlgorithm::Tamil,
+            Language::Turkish => StemmingAlgorithm::Turkish,
         }
     }
 }
 
-impl TryFrom<&Language> for stop_words::LANGUAGE {
+impl TryFrom<&Language> for StopWordLanguage {
     type Error = ();
 
     fn try_from(language: &Language) -> Result<Self, Self::Error> {
         match language {
-            Language::Arabic => Ok(stop_words::LANGUAGE::Arabic),
-            Language::Danish => Ok(stop_words::LANGUAGE::Danish),
-            Language::Dutch => Ok(stop_words::LANGUAGE::Dutch),
-            Language::English => Ok(stop_words::LANGUAGE::English),
-            Language::French => Ok(stop_words::LANGUAGE::French),
-            Language::German => Ok(stop_words::LANGUAGE::German),
-            Language::Greek => Ok(stop_words::LANGUAGE::Greek),
-            Language::Hungarian => Ok(stop_words::LANGUAGE::Hungarian),
-            Language::Italian => Ok(stop_words::LANGUAGE::Italian),
-            Language::Norwegian => Ok(stop_words::LANGUAGE::Norwegian),
-            Language::Portuguese => Ok(stop_words::LANGUAGE::Portuguese),
-            Language::Romanian => Ok(stop_words::LANGUAGE::Romanian),
-            Language::Russian => Ok(stop_words::LANGUAGE::Russian),
-            Language::Spanish => Ok(stop_words::LANGUAGE::Spanish),
-            Language::Swedish => Ok(stop_words::LANGUAGE::Swedish),
+            Language::Arabic => Ok(StopWordLanguage::Arabic),
+            Language::Danish => Ok(StopWordLanguage::Danish),
+            Language::Dutch => Ok(StopWordLanguage::Dutch),
+            Language::English => Ok(StopWordLanguage::English),
+            Language::French => Ok(StopWordLanguage::French),
+            Language::German => Ok(StopWordLanguage::German),
+            Language::Greek => Ok(StopWordLanguage::Greek),
+            Language::Hungarian => Ok(StopWordLanguage::Hungarian),
+            Language::Italian => Ok(StopWordLanguage::Italian),
+            Language::Norwegian => Ok(StopWordLanguage::Norwegian),
+            Language::Portuguese => Ok(StopWordLanguage::Portuguese),
+            Language::Romanian => Ok(StopWordLanguage::Romanian),
+            Language::Russian => Ok(StopWordLanguage::Russian),
+            Language::Spanish => Ok(StopWordLanguage::Spanish),
+            Language::Swedish => Ok(StopWordLanguage::Swedish),
             Language::Tamil => Err(()),
-            Language::Turkish => Ok(stop_words::LANGUAGE::Turkish),
+            Language::Turkish => Ok(StopWordLanguage::Turkish),
         }
     }
 }
 
 #[cached(size = 16)]
 fn get_stopwords(language: Language) -> HashSet<String> {
-    match TryInto::<stop_words::LANGUAGE>::try_into(&language) {
+    match TryInto::<StopWordLanguage>::try_into(&language) {
         Err(_) => HashSet::new(),
         Ok(lang) => stop_words::get(lang).into_iter().collect(),
     }
@@ -208,6 +210,18 @@ mod tests {
 
     use insta::assert_debug_snapshot;
 
+    fn tokenize_recipes(recipe_file: &str, language_mode: LanguageMode) -> Vec<Vec<String>> {
+        let recipes = read_recipes(recipe_file);
+
+        recipes
+            .iter()
+            .map(|Recipe { recipe, .. }| {
+                let tokenizer = Tokenizer::new(&language_mode);
+                tokenizer.tokenize(recipe)
+            })
+            .collect()
+    }
+
     #[test]
     fn it_can_tokenize_english() {
         let text = "space station";
@@ -251,7 +265,7 @@ mod tests {
     #[test]
     fn it_keeps_numbers() {
         let text = "42 1337";
-        let tokenizer = Tokenizer::new(&LanguageMode::Detect);
+        let tokenizer = Tokenizer::new(&LanguageMode::default());
 
         let tokens = tokenizer.tokenize(text);
 
@@ -289,7 +303,7 @@ mod tests {
     #[test]
     fn it_handles_empty_input() {
         let text = "";
-        let tokenizer = Tokenizer::new(&LanguageMode::Detect);
+        let tokenizer = Tokenizer::new(&LanguageMode::default());
 
         let tokens = tokenizer.tokenize(text);
 
@@ -297,16 +311,33 @@ mod tests {
     }
 
     #[test]
-    fn it_matches_snapshot() {
-        let recipes = read_recipes("recipes_en.csv");
+    fn it_detects_english() {
+        let tokens_detected = tokenize_recipes("recipes_en.csv", LanguageMode::Detect);
+        let tokens_en = tokenize_recipes("recipes_en.csv", LanguageMode::Fixed(Language::English));
 
-        let tokens: Vec<_> = recipes
-            .iter()
-            .map(|Recipe { recipe, .. }| {
-                let tokenizer = Tokenizer::new(&LanguageMode::Detect);
-                tokenizer.tokenize(recipe)
-            })
-            .collect();
+        assert_eq!(tokens_detected, tokens_en);
+    }
+
+    #[test]
+    fn it_detects_german() {
+        let tokens_detected = tokenize_recipes("recipes_de.csv", LanguageMode::Detect);
+        let token_de = tokenize_recipes("recipes_de.csv", LanguageMode::Fixed(Language::German));
+
+        assert_eq!(tokens_detected, token_de);
+    }
+
+    #[test]
+    fn it_matches_snapshot_en() {
+        let tokens = tokenize_recipes("recipes_en.csv", LanguageMode::Fixed(Language::English));
+
+        insta::with_settings!({snapshot_path => "../snapshots"}, {
+            assert_debug_snapshot!(tokens);
+        });
+    }
+
+    #[test]
+    fn it_matches_snapshot_de() {
+        let tokens = tokenize_recipes("recipes_de.csv", LanguageMode::Fixed(Language::German));
 
         insta::with_settings!({snapshot_path => "../snapshots"}, {
             assert_debug_snapshot!(tokens);

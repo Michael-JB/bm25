@@ -3,7 +3,7 @@ use crate::embedder::{
 };
 use std::{
     collections::{HashMap, HashSet},
-    fmt::Debug,
+    fmt::{self, Debug, Display},
     hash::Hash,
     marker::PhantomData,
 };
@@ -29,9 +29,19 @@ where
     inverted_term_index: HashMap<D, HashSet<K>>,
 }
 
+impl<K, D> Display for SearchEngine<K, D>
+where
+    K: Eq + Hash + Clone + Debug,
+    D: EmbeddingDimension,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "SearchEngine {{ documents: {:?} }}", self.documents)
+    }
+}
+
 /// A document that you can insert into a search engine. K is the type of the document, allowing
 /// you to use any type as a document id. Note that it is more effient to use a numeric type.
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, PartialOrd, Hash)]
 pub struct Document<K>
 where
     K: Eq + Hash + Clone + Debug,
@@ -40,6 +50,15 @@ where
     pub id: K,
     /// The contents of the document.
     pub contents: String,
+}
+
+impl<K> Display for Document<K>
+where
+    K: Eq + Hash + Clone + Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.contents)
+    }
 }
 
 impl<K> Document<K>
@@ -393,7 +412,7 @@ mod tests {
 
     #[test]
     fn it_returns_exact_matches_with_highest_score() {
-        let search_engine = create_recipe_search_engine(LanguageMode::Detect);
+        let search_engine = create_recipe_search_engine(LanguageMode::Fixed(Language::English));
 
         let results = search_engine.search(
             "To make guacamole, start by mashing 2 ripe avocados in a bowl.",

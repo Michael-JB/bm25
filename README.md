@@ -1,5 +1,9 @@
 # bm25
 
+[![Docs](https://docs.rs/bm25/badge.svg)](https://docs.rs/bm25/)
+[![Crates.io Version](https://img.shields.io/crates/v/bm25)](https://crates.io/crates/bm25)
+[![Crates.io Total Downloads](https://img.shields.io/crates/d/bm25)](https://crates.io/crates/bm25)
+
 A Rust crate that computes [BM25](https://en.wikipedia.org/wiki/Okapi_BM25) embeddings for
 information retrieval. You can use these embeddings in vector databases that support the storage
 of sparse vectors, e.g. Qdrant, Pinecone, Milvus, etc.
@@ -93,7 +97,6 @@ inject your own embedding function) by implementing the `EmbeddingDimension` tra
 
 ```rust
 use bm25::{EmbedderBuilder, EmbeddingDimension, Language};
-
 
 let text = "cup of tea";
 

@@ -42,6 +42,19 @@ pub struct Embedder<D: EmbeddingDimension = DefaultEmbeddingDimension> {
     embedding_dimension: PhantomData<D>,
 }
 
+impl<D> Display for Embedder<D>
+where
+    D: EmbeddingDimension,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Embedder {{ k1: {}, b: {}, avgdl: {} }}",
+            self.k1, self.b, self.avgdl
+        )
+    }
+}
+
 /// A trait for embedding. Implement this to customise the embedding space and function.
 pub trait EmbeddingDimension: Eq + Hash + Clone + Debug + Send + Sync {
     /// Embeds a token into the embedding space.

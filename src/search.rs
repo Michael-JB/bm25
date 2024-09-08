@@ -184,7 +184,7 @@ where
                 let token_score = token_idf * token_index_value;
                 document_score += token_score;
             }
-            scores.insert(document_id.clone(), document_score);
+            scores.insert(document_id, document_score);
         }
 
         // Sort and format results
@@ -407,6 +407,17 @@ mod tests {
         search_engine.upsert(document);
 
         let results = search_engine.search("bacon sandwich", 5);
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn handles_empty_search() {
+        let mut search_engine = SearchEngineBuilder::<u32>::with_avgdl(2.0).build();
+        let document = Document::new(123, "pencil and paper");
+
+        search_engine.upsert(document);
+
+        let results = search_engine.search("", 5);
         assert!(results.is_empty());
     }
 

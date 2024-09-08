@@ -24,9 +24,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - uses: taiki-e/install-action@cargo-hack
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt -- --check
       - run: cargo clippy --all-features
+      - run: cargo hack check --feature-powerset --no-dev-deps
 
   test:
     name: Test 

@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Impl `Display` for `Embedder`
 
+### Changed
+- Moved language detection to the `language_detection` feature. If you were previously using
+  `LanguageMode::Detect`, you'll now need to explicitly enable this feature with
+  `cargo add bm25 --features language_detection`. If you were not using `LanguageMode::Detect`,
+  you now have one dependency fewer.
+- The `LanguageMode` enum is now non-exhaustive. This is to allow conditional compilation of the
+  `Detect` variant.
+- The default language mode has been changed to `LanguageMode::Fixed(Language::English)`. This is
+  to avoid unexpected behaviour changes with feature unification.
+
 ## [0.1.1] - 2024-09-08
 
 ### Added

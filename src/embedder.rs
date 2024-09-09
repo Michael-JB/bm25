@@ -87,7 +87,7 @@ impl<D: EmbeddingDimension> Embedder<D> {
         self.avgdl
     }
 
-    /// Embeds a batch of texts into the embedding space. Use the [parallelism] feature to speed
+    /// Embeds a batch of texts into the embedding space. Use the `parallelism` feature to speed
     /// this up for large batches.
     pub fn batch_embed(&self, texts: &[&str]) -> Vec<Embedding<D>> {
         #[cfg(not(feature = "parallelism"))]
@@ -159,7 +159,8 @@ impl<D: EmbeddingDimension> EmbedderBuilder<D> {
 
     /// Constructs a new EmbedderBuilder with its average document length fit to the given corpus.
     /// Use this if you have the full corpus (or a sample of it) available in advance.
-    /// Use the [parallelism] feature to speed this up for large corpora.
+    /// Use the `parallelism` feature to speed this up for large corpora. When you call `build`,
+    /// the builder will set the language mode of the Embedder to `language_mode`.
     pub fn with_fit_to_corpus(
         language_mode: impl Into<LanguageMode>,
         corpus: &[&str],

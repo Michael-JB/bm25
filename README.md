@@ -11,6 +11,15 @@ of sparse vectors, e.g. Qdrant, Pinecone, Milvus, etc.
 This crate also contains a light-weight, in-memory full-text search engine built on top of the
 embedder.
 
+## Features
+
+- Fast
+- Multilingual
+- Language detection (optional)
+- Parallelism for fast batch-embedding (optional)
+- Customisable embedding space
+- Full access to BM25 parameters
+
 ## The BM25 algorithm 
 
 BM25 is an algorithm for scoring the relevance of a query to documents in a corpus. You can make
@@ -23,7 +32,7 @@ have two options: (1) make a sensible guess (e.g. based on a sample); or (2) con
 to disregard document length. The former is recommended if most of your documents are around the
 same size.
 
-BM25 has three hyperparameters: `b`, `k1` and `avgdl`. These terms match the formula given on
+BM25 has three parameters: `b`, `k1` and `avgdl`. These terms match the formula given on
 Wikipedia. `avgdl` ('average document length') is the aforementioned average meaningful word count;
 you should always provide a value for this and the crate can fit this for you. `b` controls
 document length normalization; `0` means no normalisation (length will not affect score) while `1`
@@ -40,63 +49,97 @@ Add `bm25` to your project with
 cargo add bm25
 ```
 
-### Embed some text
+### Embed
 
 The best way to embed some text is to fit an embedder to your corpus. 
 ```rust
-use bm25::{EmbedderBuilder, Embedder, Embedding, Language};
+use bm25::{Embedder, EmbedderBuilder, Embedding, Language};
 
 let corpus = [
     "The sky blushed pink as the sun dipped below the horizon.",
     "Apples, oranges, papayas, and more papayas.",
     "She found a forgotten letter tucked inside an old book.",
     "A single drop of rain fell, followed by a thousand more.",
-    "His laughter echoed through the empty streets, breaking the silence.",
 ];
 
 let embedder: Embedder = EmbedderBuilder::with_fit_to_corpus(Language::English, &corpus)
     .build();
 
+assert_eq!(embedder.avgdl(), 4.5);
+
 let embedding = embedder.embed(corpus[1]);
 
 assert_eq!(
-    embedding, 
+    embedding,
     Embedding {
         indices: vec![1777144781, 3887370161, 2177600299, 2177600299],
-        values:  vec![1.0563674 , 1.0563674 , 1.4273626 , 1.4273626 ],
+        values:  vec![1.0476191 , 1.0476191 , 1.4193549 , 1.4193549 ],
     }
 )
 ```
 
+#### BM25 parameters
+
 For cases where you don't have the full corpus ahead of time, but have an approximate idea of the
 average meaningful word count you expect, you can construct an embedder with your `avgdl` guess.
-By default, this crate will detect the language of your input text to embed it accordingly. You
-can configure the embedder to embed with a specific language if you know it in advance.
 
 ```rust
-use bm25::{EmbedderBuilder, Embedder, Language};
+use bm25::{Embedder, EmbedderBuilder};
 
 let embedder: Embedder = EmbedderBuilder::with_avgdl(7.0)
-    .language_mode(Language::German) // `Detect` is the default language mode
     .build();
 ```
 
 If you want to disregard document length altogether, set `b` to 0.
 
 ```rust
-use bm25::{EmbedderBuilder, Embedder};
+use bm25::{Embedder, EmbedderBuilder};
 
-let embedder: Embedder = EmbedderBuilder::with_avgdl(1.0) // if b = 0, avgdl has no effect
-    .b(0f32)
+let embedder: Embedder = EmbedderBuilder::with_avgdl(1.0)
+    .b(0.0) // if b = 0, avgdl has no effect
     .build();
 ```
 
-You can customise the dimensionality of your sparse vector via the generic parameter.
-Supported values are `usize`, `u32` and `u64`. You can also use your own type (and also
-inject your own embedding function) by implementing the `EmbeddingDimension` trait.
+#### Language
+
+By default, this crate tokenizes text in English. If you are working with a different language,
+you can set the embedder language mode.
 
 ```rust
-use bm25::{EmbedderBuilder, EmbeddingDimension, Language};
+use bm25::{Embedder, EmbedderBuilder, Language};
+
+let embedder: Embedder = EmbedderBuilder::with_avgdl(256.0)
+    .language_mode(Language::German)
+    .build();
+```
+
+If your corpus is multilingual, or you don't know the language ahead of time, you can enable the
+`language_detection` feature.
+
+```sh
+cargo add bm25 --features language_detection
+```
+
+This unlocks the `LanguageMode::Detect` enum value. In this mode, the embedder will try to detect
+the language of each piece of input text before tokenizing. Note that there is a small performance
+overhead when embedding in this mode.
+
+```rust
+use bm25::{Embedder, EmbedderBuilder, LanguageMode};
+
+let embedder: Embedder = EmbedderBuilder::with_avgdl(64.0)
+    .language_mode(LanguageMode::Detect)
+    .build();
+```
+
+#### Embedding space
+
+You can customise the dimensionality of your sparse vector via the generic parameter. Supported
+values are `usize`, `u32` and `u64`. You can also use your own type (and inject your own embedding
+function) by implementing the `EmbeddingDimension` trait.
+
+```rust
+use bm25::{EmbedderBuilder, EmbeddingDimension};
 
 let text = "cup of tea";
 
@@ -134,7 +177,7 @@ assert_eq!(embedding.indices, [MyType(42), MyType(42)]);
 This crate includes a light-weight, in-memory full-text search engine built on top of the embedder.
 
 ```rust
-use bm25::{Language, SearchEngineBuilder, SearchResult, Document};
+use bm25::{Document, Language, SearchEngineBuilder, SearchResult};
 
 let corpus = [
     "The rabbit munched the orange carrot.",
@@ -170,11 +213,11 @@ assert_eq!(
 );
 ```
 
-You can also construct a search engine with documents (allowing you to customise the id type and
+You can construct a search engine with documents (allowing you to customise the id type and
 value), or with an average document length.
 
 ```rust
-use bm25::{Language, SearchEngineBuilder, Document};
+use bm25::{Document, Language, SearchEngineBuilder};
 
 // Build a search engine from documents
 let search_engine = SearchEngineBuilder::<&str>::with_documents(
@@ -193,17 +236,19 @@ let search_engine = SearchEngineBuilder::<&str>::with_documents(
 .build();
 
 // Build a search engine from avgdl
-let search_engine = SearchEngineBuilder::<u32>::with_avgdl(256.0).build();
+let search_engine = SearchEngineBuilder::<u32>::with_avgdl(128.0)
+    .build();
 ```
 
-You can also upsert or remove documents from the search engine. Note that mutating the search corpus
+You can upsert or remove documents from the search engine. Note that mutating the search corpus
 by upserting or removing documents will change the true value of `avgdl`. The more `avgdl` drifts
 from its true value, the less accurate the BM25 scores will be.
 
 ```rust
-use bm25::{SearchEngineBuilder, Document};
+use bm25::{Document, SearchEngineBuilder};
 
-let mut search_engine = SearchEngineBuilder::<u32>::with_avgdl(10.0).build();
+let mut search_engine = SearchEngineBuilder::<u32>::with_avgdl(10.0)
+    .build();
 
 let document_id = 42;
 let document = Document {

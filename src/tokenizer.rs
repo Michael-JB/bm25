@@ -2,6 +2,7 @@ use cached::proc_macro::cached;
 use rust_stemmers::{Algorithm as StemmingAlgorithm, Stemmer};
 use std::collections::HashSet;
 use stop_words::LANGUAGE as StopWordLanguage;
+#[cfg(feature = "language_detection")]
 use whichlang::Lang as DetectedLanguage;
 
 /// Languages supported by the tokenizer.
@@ -29,13 +30,20 @@ pub enum Language {
 
 /// The language mode used by the tokenizer. This determines the algorithm used for stemming and
 /// the dictionary of stopwords.
-#[derive(Debug, Clone, Default)]
+#[non_exhaustive]
+#[derive(Debug, Clone)]
 pub enum LanguageMode {
     /// Automatically detect the language. Note that this adds a small performance overhead.
-    #[default]
+    #[cfg(feature = "language_detection")]
     Detect,
     /// Use a fixed language.
     Fixed(Language),
+}
+
+impl Default for LanguageMode {
+    fn default() -> Self {
+        LanguageMode::Fixed(Language::English)
+    }
 }
 
 impl From<Language> for LanguageMode {
@@ -44,6 +52,7 @@ impl From<Language> for LanguageMode {
     }
 }
 
+#[cfg(feature = "language_detection")]
 impl TryFrom<DetectedLanguage> for Language {
     type Error = ();
 
@@ -138,10 +147,12 @@ impl Tokenizer {
         Tokenizer {
             language_mode: language_mode.clone(),
             stemmer: match language_mode {
+                #[cfg(feature = "language_detection")]
                 LanguageMode::Detect => None,
                 LanguageMode::Fixed(lang) => Some(Stemmer::create(lang.into())),
             },
             stopwords: match language_mode {
+                #[cfg(feature = "language_detection")]
                 LanguageMode::Detect => HashSet::new(),
                 LanguageMode::Fixed(lang) => get_stopwords(lang.clone()),
             },
@@ -183,6 +194,7 @@ impl Tokenizer {
             return Vec::new();
         }
         match &self.language_mode {
+            #[cfg(feature = "language_detection")]
             LanguageMode::Detect => {
                 let detected_language =
                     Language::try_from(whichlang::detect_language(input_text)).ok();
@@ -265,7 +277,7 @@ mod tests {
     #[test]
     fn it_keeps_numbers() {
         let text = "42 1337";
-        let tokenizer = Tokenizer::new(&LanguageMode::default());
+        let tokenizer = Tokenizer::new(&LanguageMode::Detect);
 
         let tokens = tokenizer.tokenize(text);
 
@@ -303,7 +315,7 @@ mod tests {
     #[test]
     fn it_handles_empty_input() {
         let text = "";
-        let tokenizer = Tokenizer::new(&LanguageMode::default());
+        let tokenizer = Tokenizer::new(&LanguageMode::Detect);
 
         let tokens = tokenizer.tokenize(text);
 

@@ -240,8 +240,9 @@ where
     }
 
     /// Constructs a new SearchEngineBuilder with the given documents. The search engine will fit
-    /// to the given documents, using the given language mode. When you call `build`, the search
-    /// engine will be pre-populated with the given documents.
+    /// to the given documents, using the given language mode. When you call `build`, the builder
+    /// will pre-populate the search engine with the given documents, and set its language mode to
+    /// `language_mode`.
     pub fn with_documents(
         language_mode: impl Into<LanguageMode>,
         documents: impl IntoIterator<Item = impl Into<Document<K>>>,

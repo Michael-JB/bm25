@@ -2,6 +2,7 @@ use crate::embedder::{
     DefaultEmbeddingDimension, Embedder, EmbedderBuilder, EmbeddingDimension, LanguageMode,
 };
 use std::{
+    cmp::Ordering,
     collections::{HashMap, HashSet},
     fmt::{self, Debug, Display},
     hash::Hash,
@@ -189,7 +190,7 @@ where
 
         // Sort and format results
         let mut results: Vec<_> = scores.iter().collect();
-        results.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap());
+        results.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap_or(Ordering::Equal));
         results
             .into_iter()
             .take(limit.into().unwrap_or(usize::MAX))

@@ -115,7 +115,7 @@ impl<D: EmbeddingDimension> Embedder<D> {
         let values: Vec<f32> = indices
             .iter()
             .map(|i| {
-                let term_frequency = *counts.get(i).unwrap() as f32;
+                let term_frequency = *counts.get(i).unwrap_or(&0) as f32;
                 let numerator = term_frequency * (self.k1 + 1.0);
                 let denominator = term_frequency
                     + self.k1 * (1.0 - self.b + self.b * (tokens.len() as f32 / avgdl));

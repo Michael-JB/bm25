@@ -1,6 +1,6 @@
 [package]
 name = "bm25"
-version = "0.2.0"
+version = "0.2.1"
 description = "BM25 embedder and search engine"
 repository = "https://github.com/Michael-JB/bm25"
 license = "MIT"
@@ -17,7 +17,8 @@ exclude = [
 [features]
 # With parallelism enabled, batch fitting and embedding jobs happen in parallel.
 parallelism = ["dep:rayon"]
-
+# With language detection enabled, the embedder and search engine can be configured to detect the
+# language of the input text.
 language_detection = ["dep:whichlang"]
 
 [dependencies]

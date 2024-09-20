@@ -15,8 +15,9 @@ embedder.
 
 - Fast
 - Multilingual
-- Language detection (optional)
-- Parallelism for fast batch-embedding (optional)
+- Language detection
+- Stop word removal
+- Parallelism for fast batch-embedding
 - Customisable embedding space
 - Full access to BM25 parameters
 
@@ -65,7 +66,7 @@ let corpus = [
 let embedder: Embedder = EmbedderBuilder::with_fit_to_corpus(Language::English, &corpus)
     .build();
 
-assert_eq!(embedder.avgdl(), 4.5);
+assert_eq!(embedder.avgdl(), 5.75);
 
 let embedding = embedder.embed(corpus[1]);
 
@@ -73,7 +74,7 @@ assert_eq!(
     embedding,
     Embedding {
         indices: vec![1777144781, 3887370161, 2177600299, 2177600299],
-        values:  vec![1.0476191 , 1.0476191 , 1.4193549 , 1.4193549 ],
+        values:  vec![1.1422123 , 1.1422123 , 1.5037148 , 1.5037148 ],
     }
 )
 ```
@@ -132,6 +133,25 @@ let embedder: Embedder = EmbedderBuilder::with_avgdl(64.0)
     .build();
 ```
 
+#### Stop words
+
+By default, this crate removes stop words according to the NLTK stop words list for the
+given/detected language before embedding. This removes noise from insignificant words. If you do
+not want to remove stop words, disable default features.
+
+```sh
+cargo add bm25 --no-default-features
+```
+
+If you would rather use the [Stopwords ISO](https://github.com/stopwords-iso) stop words collection:
+
+```sh
+cargo add bm25 --no-default-features --features iso_stopwords
+```
+
+Stop word lists are provided by the [stop-words](https://crates.io/crates/stop-words) crate. For
+more information, see the documentation therein.
+
 #### Embedding space
 
 You can customise the dimensionality of your sparse vector via the generic parameter. Supported
@@ -161,7 +181,7 @@ assert_eq!(embedding.indices, [3288102823240002853, 7123809554392261272]);
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 struct MyType(u32);
 impl EmbeddingDimension for MyType {
-    fn embed(_: &str) -> Self {
+    fn embed(_token: &str) -> Self {
         MyType(42)
     }
 }

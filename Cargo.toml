@@ -1,6 +1,6 @@
 [package]
 name = "bm25"
-version = "0.2.1"
+version = "0.3.0"
 description = "BM25 embedder and search engine"
 repository = "https://github.com/Michael-JB/bm25"
 license = "MIT"
@@ -15,18 +15,24 @@ exclude = [
 ]
 
 [features]
-# With parallelism enabled, batch fitting and embedding jobs happen in parallel.
-parallelism = ["dep:rayon"]
+default = ["nltk_stopwords"]
 # With language detection enabled, the embedder and search engine can be configured to detect the
 # language of the input text.
 language_detection = ["dep:whichlang"]
+# With parallelism enabled, batch fitting and embedding jobs happen in parallel.
+parallelism = ["dep:rayon"]
+# With stopwords enabled, the tokenizer will remove insignificant words from the input text.
+# Enables the NLTK stopwords list.
+nltk_stopwords = ["dep:cached", "dep:stop-words", "stop-words/nltk"]
+# Enables stopwords from the stopwords-iso stopwords list.
+iso_stopwords = ["dep:cached", "dep:stop-words", "stop-words/iso"]
 
 [dependencies]
-cached = "0.53.1"
+cached = { version = "0.53.1", optional = true }
 fxhash = "0.2.1"
 rayon = { version = "1.10.0", optional = true }
 rust-stemmers = "1.2.0"
-stop-words = "0.8.0"
+stop-words = { version = "0.8.0", optional = true, default-features = false }
 whichlang = { version = "0.1.0", optional = true }
 
 [dev-dependencies]

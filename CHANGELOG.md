@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2024-09-20
+
+### Added
+- You can now enable/disable stop word removal via feature flags. Disabling stop word removal will
+  remove `cached` and `stop-words` from your dependency tree.
+- You can now choose the stop word list. Options are `nltk_stopwords` and `iso_stopwords`.
+
+### Changed
+- The default stop words list is now NLTK. This change affects embeddings; if you are upgrading
+  to this version and want to stay aligned with existing embeddings, disable default features and
+  use the `iso_stopwords` feature.
+
 ## [0.2.1] - 2024-09-09
 
 ### Fixed

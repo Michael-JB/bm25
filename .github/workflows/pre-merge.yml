@@ -38,7 +38,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Run cargo test
-        run: cargo test --all-features
+        run: cargo test --features language_detection,parallelism
 
   benchmark:
     name: Benchmark 
@@ -48,7 +48,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Run cargo bench 
-        run: cargo bench --all-features
+        run: cargo bench --features language_detection,parallelism
 
   version:
     name: Version 

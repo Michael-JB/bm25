@@ -1,6 +1,9 @@
+#[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
 use cached::proc_macro::cached;
 use rust_stemmers::{Algorithm as StemmingAlgorithm, Stemmer};
+#[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
 use std::collections::HashSet;
+#[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
 use stop_words::LANGUAGE as StopWordLanguage;
 #[cfg(feature = "language_detection")]
 use whichlang::Lang as DetectedLanguage;
@@ -102,6 +105,7 @@ impl From<&Language> for StemmingAlgorithm {
     }
 }
 
+#[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
 impl TryFrom<&Language> for StopWordLanguage {
     type Error = ();
 
@@ -128,6 +132,7 @@ impl TryFrom<&Language> for StopWordLanguage {
     }
 }
 
+#[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
 #[cached(size = 16)]
 fn get_stopwords(language: Language) -> HashSet<String> {
     match TryInto::<StopWordLanguage>::try_into(&language) {
@@ -139,6 +144,7 @@ fn get_stopwords(language: Language) -> HashSet<String> {
 pub(crate) struct Tokenizer {
     language_mode: LanguageMode,
     stemmer: Option<Stemmer>,
+    #[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
     stopwords: HashSet<String>,
 }
 
@@ -151,6 +157,7 @@ impl Tokenizer {
                 LanguageMode::Detect => None,
                 LanguageMode::Fixed(lang) => Some(Stemmer::create(lang.into())),
             },
+            #[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
             stopwords: match language_mode {
                 #[cfg(feature = "language_detection")]
                 LanguageMode::Detect => HashSet::new(),
@@ -181,10 +188,13 @@ impl Tokenizer {
         &self,
         input_text: &str,
         stemmer: Option<&Stemmer>,
-        stopwords: &HashSet<String>,
+        #[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))] stopwords: &HashSet<
+            String,
+        >,
     ) -> Vec<String> {
         let text = input_text.to_lowercase();
         let tokens = Tokenizer::split_by_whitespace_and_punctuation(&text);
+        #[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
         let tokens = tokens.filter(|token| !stopwords.contains(*token));
         self.stem(stemmer, tokens)
     }
@@ -201,14 +211,25 @@ impl Tokenizer {
                 let stemmer = detected_language
                     .as_ref()
                     .map(|lang| Stemmer::create(lang.into()));
+                #[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
                 let stopwords = match &detected_language {
                     Some(lang) => get_stopwords(lang.clone()),
                     None => HashSet::new(),
                 };
-                return self._tokenize(input_text, stemmer.as_ref(), &stopwords);
+                return self._tokenize(
+                    input_text,
+                    stemmer.as_ref(),
+                    #[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
+                    &stopwords,
+                );
             }
             LanguageMode::Fixed(_) => {
-                return self._tokenize(input_text, self.stemmer.as_ref(), &self.stopwords);
+                return self._tokenize(
+                    input_text,
+                    self.stemmer.as_ref(),
+                    #[cfg(any(feature = "iso_stopwords", feature = "nltk_stopwords"))]
+                    &self.stopwords,
+                );
             }
         }
     }

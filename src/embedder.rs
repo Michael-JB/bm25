@@ -100,7 +100,12 @@ impl<D: EmbeddingDimension> Embedder<D> {
     /// Embeds the given text into the embedding space.
     pub fn embed(&self, text: &str) -> Embedding<D> {
         let tokens = self.tokenizer.tokenize(text);
+        self.embed_tokens(&tokens.iter().map(|s| s.as_str()).collect::<Vec<_>>())
+    }
 
+    /// Embeds the given tokens into the embedding space. This function lets you use your own
+    /// tokenizer; if this is not your intention, use `embed` instead.
+    pub fn embed_tokens(&self, tokens: &[&str]) -> Embedding<D> {
         let avgdl = if self.avgdl <= 0.0 {
             Self::FALLBACK_AVGDL
         } else {
@@ -312,6 +317,16 @@ mod tests {
         let embeddings = embedder.batch_embed(&corpus);
 
         assert!(embeddings.windows(2).all(|e| e[0] == e[1]));
+    }
+
+    #[test]
+    fn token_embedding_is_consistent() {
+        let embedder = EmbedderBuilder::<u32>::with_avgdl(2.0).build();
+
+        let embedding = embedder.embed("space station");
+        let token_embedding = embedder.embed_tokens(&["space", "station"]);
+
+        assert_eq!(embedding, token_embedding);
     }
 
     #[test]

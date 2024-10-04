@@ -133,7 +133,12 @@ let embedder: Embedder = EmbedderBuilder::with_avgdl(64.0)
     .build();
 ```
 
-#### Stop words
+#### Tokenizer
+
+The built-in tokenizer detects language, splits on whitespace and punctuation, removes stop words
+and stems the remaining words.
+
+##### Stop words
 
 By default, this crate removes stop words according to the NLTK stop words list for the
 given/detected language before embedding. This removes noise from insignificant words. If you do
@@ -151,6 +156,30 @@ cargo add bm25 --no-default-features --features iso_stopwords
 
 Stop word lists are provided by the [stop-words](https://crates.io/crates/stop-words) crate. For
 more information, see the documentation therein.
+
+##### Custom tokenizer
+
+While the built-in tokenizer works well for most languages and use-cases, you can still tokenize
+text yourself and use this crate only for embedding.
+
+```rust
+use bm25::{Embedder, EmbedderBuilder, Embedding};
+
+let tokens = ["my", "custom", "tokens"];
+
+let embedder: Embedder = EmbedderBuilder::with_avgdl(3.0)
+    .build();
+
+let embedding = embedder.embed_tokens(&tokens);
+
+assert_eq!(
+    embedding,
+    Embedding {
+        indices: vec![761702941, 1341939349, 2205492288],
+        values:  vec![1.0,       1.0,        1.0       ],
+    }
+)
+```
 
 #### Embedding space
 

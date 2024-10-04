@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2024-10-04
+
+### Added
+- Added an `embed_tokens` function to `Embedder`. This lets you use your own tokenizer with this
+  crate.
+
 ## [0.3.0] - 2024-09-20
 
 ### Added

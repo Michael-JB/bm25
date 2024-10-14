@@ -128,6 +128,7 @@ overhead when embedding in this mode.
 ```rust
 use bm25::{Embedder, EmbedderBuilder, LanguageMode};
 
+#[cfg(feature = "language_detection")]
 let embedder: Embedder = EmbedderBuilder::with_avgdl(64.0)
     .language_mode(LanguageMode::Detect)
     .build();

@@ -296,6 +296,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "language_detection")]
     fn it_keeps_numbers() {
         let text = "42 1337";
         let tokenizer = Tokenizer::new(&LanguageMode::Detect);
@@ -334,6 +335,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "language_detection")]
     fn it_handles_empty_input() {
         let text = "";
         let tokenizer = Tokenizer::new(&LanguageMode::Detect);
@@ -344,6 +346,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "language_detection")]
     fn it_detects_english() {
         let tokens_detected = tokenize_recipes("recipes_en.csv", LanguageMode::Detect);
         let tokens_en = tokenize_recipes("recipes_en.csv", LanguageMode::Fixed(Language::English));
@@ -352,6 +355,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "language_detection")]
     fn it_detects_german() {
         let tokens_detected = tokenize_recipes("recipes_de.csv", LanguageMode::Detect);
         let token_de = tokenize_recipes("recipes_de.csv", LanguageMode::Fixed(Language::German));

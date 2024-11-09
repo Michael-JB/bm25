@@ -4,28 +4,29 @@
 [![Crates.io Version](https://img.shields.io/crates/v/bm25)](https://crates.io/crates/bm25)
 [![Crates.io Total Downloads](https://img.shields.io/crates/d/bm25)](https://crates.io/crates/bm25)
 
-A Rust crate that computes [BM25](https://en.wikipedia.org/wiki/Okapi_BM25) embeddings for
-information retrieval. You can use these embeddings in vector databases that support the storage
-of sparse vectors, e.g. Qdrant, Pinecone, Milvus, etc.
-
-This crate also contains a light-weight, in-memory full-text search engine built on top of the
-embedder.
+A Rust crate for everything [BM25](https://en.wikipedia.org/wiki/Okapi_BM25). This crate provides
+utilities at three levels of abstraction:
+1. **BM25 Embedder**: Embeds text into a sparse vector space for information retrieval. You can use
+    these embeddings with vector databases, e.g., Qdrant, Pinecone and Milvus, etc.
+2. **BM25 Scorer**: Efficiently scores the relevance of a query embedding to document embeddings.
+3. **BM25 Search Engine**: A fast, light-weight, in-memory full-text search engine built on top of
+    the embedder and scorer.
 
 ## Features
 
 - Fast
-- Multilingual
-- Language detection
-- Stop word removal
-- Parallelism for fast batch-embedding
-- Customisable embedding space
+- Language-detecting tokenizer using industry-standard NLP techniques
+- Parallelism for fast batch-fitting
 - Full access to BM25 parameters
+- Modular and customisable
+- Configurable via compile-time features
 
 ## The BM25 algorithm 
 
-BM25 is an algorithm for scoring the relevance of a query to documents in a corpus. You can make
-this scoring more efficient by pre-computing a 'sparse embedding' of each document. You can use
-these sparse embeddings directly, or upload them to a vector database and query them from there.
+[BM25](https://en.wikipedia.org/wiki/Okapi_BM25) is an algorithm for scoring the relevance of a
+query to documents in a corpus. You can make this scoring more efficient by pre-computing a
+'sparse embedding' of each document. You can use these sparse embeddings directly, or upload them
+to a vector database and query them from there.
 
 BM25 assumes that you know the average (meaningful) word count of your documents ahead of time. This
 crate provides utilities to compute this. If this assumption doesn't hold for your use-case, you
@@ -50,11 +51,14 @@ Add `bm25` to your project with
 cargo add bm25
 ```
 
+Depending on your use-case, you may want to read more about the [Embedder](#embed), [Scorer](#score)
+or [SearchEngine](#search).
+
 ### Embed
 
 The best way to embed some text is to fit an embedder to your corpus. 
 ```rust
-use bm25::{Embedder, EmbedderBuilder, Embedding, Language};
+use bm25::{Embedder, EmbedderBuilder, Embedding, TokenEmbedding, Language};
 
 let corpus = [
     "The sky blushed pink as the sun dipped below the horizon.",
@@ -63,8 +67,7 @@ let corpus = [
     "A single drop of rain fell, followed by a thousand more.",
 ];
 
-let embedder: Embedder = EmbedderBuilder::with_fit_to_corpus(Language::English, &corpus)
-    .build();
+let embedder: Embedder = EmbedderBuilder::with_fit_to_corpus(Language::English, &corpus).build();
 
 assert_eq!(embedder.avgdl(), 5.75);
 
@@ -72,10 +75,24 @@ let embedding = embedder.embed(corpus[1]);
 
 assert_eq!(
     embedding,
-    Embedding {
-        indices: vec![1777144781, 3887370161, 2177600299, 2177600299],
-        values:  vec![1.1422123 , 1.1422123 , 1.5037148 , 1.5037148 ],
-    }
+    Embedding(vec![
+        TokenEmbedding {
+            index: 1777144781,
+            value: 1.1422123,
+        },
+        TokenEmbedding {
+            index: 3887370161,
+            value: 1.1422123,
+        },
+        TokenEmbedding {
+            index: 2177600299,
+            value: 1.5037148,
+        },
+        TokenEmbedding {
+            index: 2177600299,
+            value: 1.5037148,
+        },
+    ])
 )
 ```
 
@@ -103,8 +120,8 @@ let embedder: Embedder = EmbedderBuilder::with_avgdl(1.0)
 
 #### Language
 
-By default, this crate tokenizes text in English. If you are working with a different language,
-you can set the embedder language mode.
+By default, the embedder uses an English `DefaultTokenizer`. If you are working with a different
+language, you can configure the embedder to tokenize accordingly.
 
 ```rust
 use bm25::{Embedder, EmbedderBuilder, Language};
@@ -121,7 +138,7 @@ If your corpus is multilingual, or you don't know the language ahead of time, yo
 cargo add bm25 --features language_detection
 ```
 
-This unlocks the `LanguageMode::Detect` enum value. In this mode, the embedder will try to detect
+This unlocks the `LanguageMode::Detect` enum value. In this mode, the tokenizer will try to detect
 the language of each piece of input text before tokenizing. Note that there is a small performance
 overhead when embedding in this mode.
 
@@ -135,81 +152,83 @@ let embedder: Embedder = EmbedderBuilder::with_avgdl(64.0)
 
 #### Tokenizer
 
-The built-in tokenizer detects language, splits on whitespace and punctuation, removes stop words
-and stems the remaining words.
+The default tokenizer detects language, splits on whitespace and punctuation, removes stop words
+and stems the remaining words. While this works well for most languages and use-cases, this crate
+makes it easy for you to provide your own tokenizer. All you have to do is implement the
+`Tokenizer` trait.
 
-##### Stop words
+```rust
+use bm25::{EmbedderBuilder, Embedding, Tokenizer};
 
-By default, this crate removes stop words according to the NLTK stop words list for the
-given/detected language before embedding. This removes noise from insignificant words. If you do
-not want to remove stop words, disable default features.
+#[derive(Default)]
+struct MyTokenizer {}
+
+// Tokenize on occurrences of "T"
+impl Tokenizer for MyTokenizer {
+    fn tokenize(&self, input_text: &str) -> Vec<String> {
+        input_text
+            .split("T")
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .collect()
+    }
+}
+
+let embedder = EmbedderBuilder::<u32, MyTokenizer>::with_avgdl(1.0).build();
+
+let embedding = embedder.embed("CupTofTtea");
+
+assert_eq!(
+    embedding.indices().cloned().collect::<Vec<_>>(),
+    vec![3568447556, 3221979461, 415655421]
+);
+```
+
+If you're not using the `DefaultTokenizer` at all, you can disable the `default_tokenizer` feature
+to remove some dependencies from your project.
 
 ```sh
 cargo add bm25 --no-default-features
-```
-
-If you would rather use the [Stopwords ISO](https://github.com/stopwords-iso) stop words collection:
-
-```sh
-cargo add bm25 --no-default-features --features iso_stopwords
-```
-
-Stop word lists are provided by the [stop-words](https://crates.io/crates/stop-words) crate. For
-more information, see the documentation therein.
-
-##### Custom tokenizer
-
-While the built-in tokenizer works well for most languages and use-cases, you can still tokenize
-text yourself and use this crate only for embedding.
-
-```rust
-use bm25::{Embedder, EmbedderBuilder, Embedding};
-
-let tokens = ["my", "custom", "tokens"];
-
-let embedder: Embedder = EmbedderBuilder::with_avgdl(3.0)
-    .build();
-
-let embedding = embedder.embed_tokens(&tokens);
-
-assert_eq!(
-    embedding,
-    Embedding {
-        indices: vec![761702941, 1341939349, 2205492288],
-        values:  vec![1.0,       1.0,        1.0       ],
-    }
-)
 ```
 
 #### Embedding space
 
 You can customise the dimensionality of your sparse vector via the generic parameter. Supported
 values are `usize`, `u32` and `u64`. You can also use your own type (and inject your own embedding
-function) by implementing the `EmbeddingDimension` trait.
+function) by implementing the `TokenEmbedder` trait.
 
 ```rust
-use bm25::{EmbedderBuilder, EmbeddingDimension};
+use bm25::{EmbedderBuilder, TokenEmbedder};
 
 let text = "cup of tea";
 
 // Embed into a u32-dimensional space
 let embedder = EmbedderBuilder::<u32>::with_avgdl(2.0).build();
 let embedding = embedder.embed(text);
-assert_eq!(embedding.indices, [2070875659, 415655421]);
+assert_eq!(
+    embedding.indices().cloned().collect::<Vec<_>>(),
+    [2070875659, 415655421]
+);
 
 // Embed into a u64-dimensional space
 let embedder = EmbedderBuilder::<u64>::with_avgdl(2.0).build();
 let embedding = embedder.embed(text);
-assert_eq!(embedding.indices, [3288102823240002853, 7123809554392261272]);
+assert_eq!(
+    embedding.indices().cloned().collect::<Vec<_>>(),
+    [3288102823240002853, 7123809554392261272]
+);
 
 // Embed into a usize-dimensional space
 let embedder = EmbedderBuilder::<usize>::with_avgdl(2.0).build();
 let embedding = embedder.embed(text);
-assert_eq!(embedding.indices, [3288102823240002853, 7123809554392261272]);
+assert_eq!(
+    embedding.indices().cloned().collect::<Vec<_>>(),
+    [3288102823240002853, 7123809554392261272]
+);
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 struct MyType(u32);
-impl EmbeddingDimension for MyType {
+impl TokenEmbedder for MyType {
     fn embed(_token: &str) -> Self {
         MyType(42)
     }
@@ -218,7 +237,58 @@ impl EmbeddingDimension for MyType {
 // Embed into a MyType-dimensional space
 let embedder = EmbedderBuilder::<MyType>::with_avgdl(2.0).build();
 let embedding = embedder.embed(text);
-assert_eq!(embedding.indices, [MyType(42), MyType(42)]);
+assert_eq!(
+    embedding.indices().cloned().collect::<Vec<_>>(),
+    [MyType(42), MyType(42)]
+);
+```
+
+### Score
+
+This crate provides a BM25 scorer that can efficiently score the relevance of a query embedding to
+document embeddings. The scorer manages the complexity of maintaining token frequencies and indexes,
+as well as the actual scoring.
+
+```rust
+use bm25::{Embedder, EmbedderBuilder, Language, Scorer, ScoredDocument};
+
+let corpus = [
+    "The sky blushed pink as the sun dipped below the horizon.",
+    "She found a forgotten letter tucked inside an old book.",
+    "Apples, oranges, pink grapefruits, and more pink grapefruits.",
+    "A single drop of rain fell, followed by a thousand more.",
+];
+let query = "pink";
+
+let mut scorer = Scorer::<usize>::new();
+
+let embedder: Embedder =
+    EmbedderBuilder::with_fit_to_corpus(Language::English, &corpus).build();
+
+for (i, document) in corpus.iter().enumerate() {
+    let document_embedding = embedder.embed(document);
+    scorer.upsert(&i, document_embedding);
+}
+
+let query_embedding = embedder.embed(query);
+
+let score = scorer.score(&0, &query_embedding);
+assert_eq!(score, Some(0.36260858));
+
+let matches = scorer.matches(&query_embedding);
+assert_eq!(
+    matches,
+    vec![
+        ScoredDocument {
+            id: 2,
+            score: 0.4960082
+        },
+        ScoredDocument {
+            id: 0,
+            score: 0.36260858
+        }
+    ]
+);
 ```
 
 ### Search
@@ -235,8 +305,7 @@ let corpus = [
     "The squirrel buried the brown nut.",
 ];
 
-let search_engine = SearchEngineBuilder::<u32>::with_corpus(Language::English, corpus)
-    .build();
+let search_engine = SearchEngineBuilder::<u32>::with_corpus(Language::English, corpus).build();
 
 let limit = 3;
 let search_results = search_engine.search("orange", limit);
@@ -308,7 +377,7 @@ let document = Document {
 };
 
 search_engine.upsert(document.clone());
-assert_eq!(search_engine.get(&document_id).unwrap(), document);
+assert_eq!(search_engine.get(&document_id), Some(document));
 
 search_engine.remove(&document_id);
 assert_eq!(search_engine.get(&document_id), None);
@@ -316,9 +385,9 @@ assert_eq!(search_engine.get(&document_id), None);
 
 ### Working with a large corpus
 
-If your corpus is large, fitting an embedder and generating embeddings can be slow. Fortunately,
-these tasks can both be trivially parallelised via the `parallelism` feature, which implements
-data parallelism using [Rayon](https://crates.io/crates/rayon).
+If your corpus is large, fitting an embedder can be slow. Fortunately, you can trivially
+parallelise this via the `parallelism` feature, which implements data parallelism using
+[Rayon](https://crates.io/crates/rayon).
 
 ```sh
 cargo add bm25 --features parallelism

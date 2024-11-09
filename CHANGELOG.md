@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Scorer` that lets you score documents against a query. Previously, the crate did not expose
+  this level of abstraction. This allows fine-grained access to the BM25 algorithm for those
+  interested in the raw scores, e.g., if you're not using a vector database.
+- `Tokenizer` trait that lets you use your own tokenizer with this crate. This now lets you use
+  your own tokenizer with the `SearchEngine` as well as the `Embedder`.
+
+### Changed
+
+- Structure of an `Embedding`. Previously, the Embedding type had two fields; `indices` and
+  `values`. This matched the (JSON/Python) formats commonly used in vector database APIs/SDKs.
+  However, in Rust this format does not guarantee that the length/order of your indices match the
+  values. While the crate does not emit invalid embeddings such as this, it is nicer to enforce
+  this: the new structure pairs each index with its corresponding value, wrapping both in the new
+  `TokenEmbedding` type. I've included `indices()` and `values()` convenience methods to get the
+  data in a format compatible with the old one if you need it.
+- The tokenizer provided by this crate is now available behind the `default_tokenizer` feature,
+  which is enabled by default.
+- Trait bounds moved from struct definitions to the requiring impl blocks. This makes the API
+  less restrictive and should help prevent trait bound pollution.
+- Renamed `EmbeddingDimension` trait to `TokenEmbedder`; this is more descriptive of what the
+  trait does.
+- `EmbedderBuilder` is now a consuming builder.
+
+### Removed
+
+- `Embedder::embed_tokens`. To use your own tokenizer, you can implement the
+  `Tokenizer` trait and pass your type to the `Embedder`/`SearchEngine`.
+- `iso_stopwords` feature. The default tokenizer is no longer configurable via feature flags.
+- `nltk_stopwords` feature. The default tokenizer is no longer configurable via feature flags.
+- Unnecessary `Display` impl for `Embedder`.
+- `Embedder::batch_embed` function. Enabling the `parallelism` feature causes this function to
+  return embeddings in a different order than the input, so I removed it to avoid confusion.
+
 ## [0.3.1] - 2024-10-04
 
 ### Added

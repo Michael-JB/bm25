@@ -1,5 +1,6 @@
-use bm25::{EmbedderBuilder, EmbeddingDimension, Language, LanguageMode};
+use bm25::{EmbedderBuilder, Language, LanguageMode, TokenEmbedder};
 use divan::Bencher;
+use std::hash::Hash;
 
 use divan::AllocProfiler;
 
@@ -20,6 +21,7 @@ machine translation tasks show these models to be superior in quality while bein
 parallelizable and requiring significantly less time to train.";
 
 #[divan::bench(args = [
+    #[cfg(feature = "language_detection")]
     LanguageMode::Detect,
     LanguageMode::Fixed(Language::English),
 ], sample_count = 10000)]
@@ -33,7 +35,10 @@ fn language_mode(bencher: Bencher, language_mode: &LanguageMode) {
 }
 
 #[divan::bench(types = [usize, u32, u64], sample_count = 10000)]
-fn dimension<T: EmbeddingDimension>(bencher: Bencher) {
+fn dimension<T>(bencher: Bencher)
+where
+    T: TokenEmbedder + Hash + Eq,
+{
     bencher
         .with_inputs(|| {
             let embedder =
@@ -54,14 +59,4 @@ fn fit_to_corpus(bencher: Bencher) {
 
     bencher
         .bench(|| EmbedderBuilder::<u32>::with_fit_to_corpus(Language::English, &corpus).build());
-}
-
-#[divan::bench]
-fn batch_embed(bencher: Bencher) {
-    let corpus = [ENGLISH_TEXT; 5000];
-    let embedder = EmbedderBuilder::<u32>::with_fit_to_corpus(Language::English, &corpus).build();
-    // Run once beforehand to warm up the cache
-    embedder.embed(ENGLISH_TEXT);
-
-    bencher.bench(|| embedder.batch_embed(&corpus));
 }

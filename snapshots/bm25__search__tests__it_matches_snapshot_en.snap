@@ -1,0 +1,118 @@
+---
+source: src/search.rs
+expression: results
+---
+[
+    SearchResult {
+        document: Document {
+            id: "Apple Pie",
+            contents: "To make apple pie, start by preheating your oven to 425°F (220°C). In a large bowl, combine 6 peeled and sliced apples with 1/2 cup of sugar, 1 teaspoon of cinnamon, and 1/4 teaspoon of nutmeg. Toss the apples to coat them evenly. Roll out a pie crust and fit it into a 9-inch pie dish. Pour the apple mixture into the crust and dot with 2 tablespoons of butter. Roll out the second pie crust and place it over the apples, crimping the edges to seal. Cut a few slits in the top crust to allow steam to escape. Bake for 45-50 minutes, or until the crust is golden brown and the filling is bubbly. Let the pie cool before serving.",
+        },
+        score: 0.29473183,
+    },
+    SearchResult {
+        document: Document {
+            id: "BBQ Chicken Wings",
+            contents: "To make BBQ chicken wings, start by preheating your oven to 400°F (200°C). Place 2 pounds of chicken wings in a large bowl and toss them with 2 tablespoons of vegetable oil, salt, and pepper. Spread the wings out on a baking sheet lined with parchment paper. Bake in the preheated oven for 25-30 minutes, flipping halfway through, until the wings are golden brown and crispy. Remove the wings from the oven and toss them in your favorite BBQ sauce. Return the wings to the oven for an additional 5 minutes to allow the sauce to set. Serve hot, with extra sauce on the side.",
+        },
+        score: 0.42824444,
+    },
+    SearchResult {
+        document: Document {
+            id: "Baked Ziti",
+            contents: "To make baked ziti, preheat your oven to 375°F (190°C). Cook 1 pound of ziti pasta according to package instructions, then drain and set aside. In a large skillet, brown 1 pound of Italian sausage over medium heat, breaking it up into small pieces. Stir in 1 jar of marinara sauce and simmer for 5 minutes. In a large bowl, combine the cooked ziti with the sausage mixture, 1 cup of ricotta cheese, and 1/2 cup of grated Parmesan cheese. Pour the mixture into a greased baking dish and top with 2 cups of shredded mozzarella cheese. Bake for 25-30 minutes, or until the cheese is melted and bubbly. Let the ziti cool for a few minutes before serving.",
+        },
+        score: 0.46412152,
+    },
+    SearchResult {
+        document: Document {
+            id: "Banana Bread",
+            contents: "To make banana bread, preheat your oven to 350°F (175°C). In a large bowl, mash 3 ripe bananas with a fork. Stir in 1/3 cup of melted butter, 1/2 cup of sugar, 1 beaten egg, and 1 teaspoon of vanilla extract. In a separate bowl, whisk together 1 1/2 cups of flour, 1 teaspoon of baking soda, and a pinch of salt. Gradually add the dry ingredients to the wet ingredients, stirring until just combined. Pour the batter into a greased loaf pan and bake for 60 minutes, or until a toothpick inserted into the center comes out clean. Let the bread cool in the pan for 10 minutes before transferring to a wire rack to cool completely.",
+        },
+        score: 0.4034656,
+    },
+    SearchResult {
+        document: Document {
+            id: "Blueberry Muffins",
+            contents: "To make blueberry muffins, preheat your oven to 375°F (190°C) and line a muffin tin with paper liners. In a large bowl, whisk together 1 1/2 cups of flour, 3/4 cup of sugar, 1/2 teaspoon of salt, and 2 teaspoons of baking powder. In a separate bowl, combine 1/3 cup of vegetable oil, 1 large egg, and 1/3 cup of milk. Pour the wet ingredients into the dry ingredients and stir until just combined. Gently fold in 1 cup of fresh or frozen blueberries. Divide the batter evenly among the muffin cups and bake for 20-25 minutes, or until a toothpick inserted into the center comes out clean. Let the muffins cool in the tin for a few minutes before transferring to a wire rack to cool completely.",
+        },
+        score: 0.38992852,
+    },
+    SearchResult {
+        document: Document {
+            id: "Chicken Parmesan",
+            contents: "To make chicken Parmesan, preheat your oven to 400°F (200°C). Start by seasoning 2 boneless, skinless chicken breasts with salt and pepper. Dredge each chicken breast in flour, then dip in beaten eggs, and finally coat with breadcrumbs mixed with grated Parmesan cheese. In a large skillet, heat 2 tablespoons of olive oil over medium heat. Cook the chicken for 3-4 minutes on each side until golden brown. Transfer the chicken to a baking dish and top with marinara sauce and shredded mozzarella cheese. Bake for 15-20 minutes until the cheese is melted and bubbly. Serve hot over spaghetti or your favorite pasta.",
+        },
+        score: 0.41797647,
+    },
+    SearchResult {
+        document: Document {
+            id: "Chocolate Cake",
+            contents: "To make a moist chocolate cake, preheat your oven to 350°F (175°C). Grease and flour two 9-inch round cake pans. In a large bowl, stir together 2 cups of sugar, 1 3/4 cups of flour, 3/4 cup of cocoa powder, 1 1/2 teaspoons of baking powder, 1 1/2 teaspoons of baking soda, and 1 teaspoon of salt. Add 2 eggs, 1 cup of milk, 1/2 cup of vegetable oil, and 2 teaspoons of vanilla extract. Beat the mixture on medium speed for 2 minutes. Stir in 1 cup of boiling water (the batter will be thin). Pour the batter evenly into the prepared pans. Bake for 30-35 minutes, or until a toothpick inserted into the center comes out clean. Cool the cakes in the pans for 10 minutes, then remove to wire racks to cool completely before frosting.",
+        },
+        score: 0.43455476,
+    },
+    SearchResult {
+        document: Document {
+            id: "Chocolate Chip Cookies",
+            contents: "To make classic chocolate chip cookies, preheat your oven to 350°F (175°C). In a large bowl, cream together 1 cup of softened butter, 1 cup of white sugar, and 1 cup of brown sugar until smooth. Beat in 2 eggs, one at a time, then stir in 2 teaspoons of vanilla extract. In a separate bowl, whisk together 3 cups of flour, 1 teaspoon of baking soda, and 1/2 teaspoon of salt. Gradually blend the dry ingredients into the wet mixture. Fold in 2 cups of semisweet chocolate chips. Drop tablespoon-sized balls of dough onto ungreased baking sheets. Bake for 10-12 minutes, or until the edges are golden brown. Let the cookies cool on the baking sheet for a few minutes before transferring to a wire rack to cool completely.",
+        },
+        score: 0.48780164,
+    },
+    SearchResult {
+        document: Document {
+            id: "Eggplant Parmesan",
+            contents: "To make eggplant Parmesan, start by preheating your oven to 375°F (190°C). Slice 2 medium eggplants into 1/4-inch thick rounds. Season the slices with salt and let them sit for 30 minutes to draw out excess moisture. Pat the eggplant slices dry with paper towels. Dredge each slice in flour, dip in beaten eggs, and coat with breadcrumbs. In a large skillet, heat 2 tablespoons of olive oil over medium heat and fry the eggplant slices until golden brown on both sides. In a baking dish, layer the fried eggplant slices with marinara sauce and shredded mozzarella cheese. Repeat the layers until all the ingredients are used, ending with a layer of cheese. Bake for 25-30 minutes until the cheese is melted and bubbly. Serve hot.",
+        },
+        score: 0.39583117,
+    },
+    SearchResult {
+        document: Document {
+            id: "Garlic Bread",
+            contents: "To make garlic bread, preheat your oven to 350°F (175°C). In a small bowl, mix together 1/2 cup of softened butter, 3 minced garlic cloves, and 2 tablespoons of chopped fresh parsley. Cut a loaf of French bread in half lengthwise. Spread the garlic butter mixture evenly over the cut sides of the bread. Place the bread halves on a baking sheet and bake for 10-12 minutes, or until the edges are golden and crispy. For extra cheesy garlic bread, sprinkle shredded mozzarella or Parmesan cheese over the top and bake for an additional 3-5 minutes, until the cheese is melted and bubbly. Slice and serve warm.",
+        },
+        score: 0.47250822,
+    },
+    SearchResult {
+        document: Document {
+            id: "Garlic Roasted Potatoes",
+            contents: "To make garlic roasted potatoes, preheat your oven to 400°F (200°C). Cut four medium-sized potatoes into bite-sized cubes and place them in a large bowl. Toss the potatoes with three tablespoons of olive oil, four minced garlic cloves, salt, and pepper to taste. Spread the potatoes out in a single layer on a baking sheet. Roast in the preheated oven for 25-30 minutes, stirring halfway through, until the potatoes are golden brown and crispy. Garnish with chopped fresh parsley before serving.",
+        },
+        score: 0.33217233,
+    },
+    SearchResult {
+        document: Document {
+            id: "Lasagna",
+            contents: "To make lasagna, preheat your oven to 375°F (190°C). Start by cooking 12 lasagna noodles according to package instructions. In a large skillet, brown 1 pound of ground beef with 1 diced onion and 2 minced garlic cloves. Drain any excess fat, then stir in 1 jar of marinara sauce and simmer for 10 minutes. In a separate bowl, mix 1 cup of ricotta cheese with 1 beaten egg and 1/2 cup of grated Parmesan cheese. To assemble the lasagna, spread a thin layer of meat sauce in the bottom of a baking dish. Layer 3 noodles over the sauce, then spread with a third of the ricotta mixture and sprinkle with shredded mozzarella cheese. Repeat the layers, ending with a final layer of meat sauce and mozzarella cheese. Cover with foil and bake for 25 minutes, then remove the foil and bake for an additional 15 minutes until the cheese is melted and bubbly. Let the lasagna cool for 10 minutes before slicing and serving.",
+        },
+        score: 0.42745107,
+    },
+    SearchResult {
+        document: Document {
+            id: "Macaroni and Cheese",
+            contents: "To make classic macaroni and cheese, start by cooking 2 cups of elbow macaroni in a large pot of boiling salted water until al dente. Drain the pasta and set it aside. In the same pot, melt 2 tablespoons of butter over medium heat. Stir in 2 tablespoons of flour to form a roux, cooking for about 1 minute. Gradually whisk in 2 cups of milk, stirring constantly until the sauce thickens. Remove the pot from heat and stir in 2 cups of shredded cheddar cheese until melted and smooth. Add the cooked macaroni to the sauce, stirring to coat the pasta evenly. Serve hot, optionally topped with breadcrumbs and baked until golden.",
+        },
+        score: 0.29980057,
+    },
+    SearchResult {
+        document: Document {
+            id: "Pancakes",
+            contents: "To make pancakes, whisk together 1 cup of flour, 2 tablespoons of sugar, 1 teaspoon of baking powder, and a pinch of salt in a large bowl. In a separate bowl, whisk together 1 cup of milk, 1 egg, and 2 tablespoons of melted butter. Pour the wet ingredients into the dry ingredients and stir until just combined; a few lumps are okay. Heat a non-stick skillet or griddle over medium heat and lightly grease it with butter or oil. Pour 1/4 cup of batter for each pancake onto the skillet. Cook until bubbles form on the surface, then flip and cook until the other side is golden brown. Serve warm with syrup and butter.",
+        },
+        score: 0.29980057,
+    },
+    SearchResult {
+        document: Document {
+            id: "Pumpkin Pie",
+            contents: "To make pumpkin pie, preheat your oven to 425°F (220°C). In a large bowl, whisk together 2 cups of canned pumpkin puree, 1 can of sweetened condensed milk, 2 large eggs, 1 teaspoon of cinnamon, 1/2 teaspoon of ground ginger, 1/4 teaspoon of ground cloves, and 1/2 teaspoon of salt. Pour the mixture into an unbaked 9-inch pie crust. Bake for 15 minutes, then reduce the oven temperature to 350°F (175°C) and bake for an additional 35-40 minutes, or until a knife inserted into the center comes out clean. Let the pie cool completely before serving with whipped cream.",
+        },
+        score: 0.4130249,
+    },
+    SearchResult {
+        document: Document {
+            id: "Stuffed Bell Peppers",
+            contents: "To make stuffed bell peppers, start by preheating your oven to 375°F (190°C). Cut the tops off 4 bell peppers and remove the seeds. In a large skillet, heat 1 tablespoon of olive oil over medium heat. Add 1 diced onion and 2 minced garlic cloves, cooking until softened. Stir in 1 pound of ground beef and cook until browned. Drain any excess fat. Add 1 cup of cooked rice, 1 can of diced tomatoes, salt, pepper, and a teaspoon of Italian seasoning. Stuff each bell pepper with the beef mixture and place them in a baking dish. Top with shredded cheese and cover with foil. Bake for 25-30 minutes, then remove the foil and bake for an additional 10 minutes until the cheese is bubbly and golden.",
+        },
+        score: 0.45602733,
+    },
+]

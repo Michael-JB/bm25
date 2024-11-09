@@ -1,5 +1,3 @@
-pub use crate::tokenizer::LanguageMode;
-
 use crate::tokenizer::Tokenizer;
 use fxhash::{hash, hash32, hash64};
 #[cfg(feature = "parallelism")]
@@ -9,77 +7,118 @@ use std::{
     fmt::{self, Debug, Display},
     hash::Hash,
     marker::PhantomData,
+    ops::{Deref, DerefMut},
 };
 
-pub type DefaultEmbeddingDimension = u32;
+pub type DefaultTokenEmbedder = u32;
 
-/// Represents a document embedded in a D-dimensional space.
-/// The structure and naming of this struct matches the common format for BM25 embeddings.
+/// The default tokenizer is available via the `default_tokenizer` feature. It should fit most
+/// use-cases. It splits on whitespace and punctuation, removes stop words and stems the
+/// remaining words. It can also detect languages via the `language_detection` feature. This crate
+/// uses `DefaultTokenizer` as the default concrete type for things that are generic
+/// over a `Tokenizer`.
+#[cfg(feature = "default_tokenizer")]
+pub type DefaultTokenizer = crate::default_tokenizer::DefaultTokenizer;
+
+/// A dummy type to represent the absence of a default tokenizer. If a compile error led you here,
+/// you either need to enable the `default_tokenizer` feature, or specify your custom tokenizer as
+/// a type parameter to whatever you're trying to construct.
+#[cfg(not(feature = "default_tokenizer"))]
+pub struct NoDefaultTokenizer {}
+/// The default tokenizer is available via the `default_tokenizer` feature. It should fit most
+/// use-cases. It splits on whitespace and punctuation, removes stop words and stems the
+/// remaining words. It can also detect languages via the `language_detection` feature. This crate
+/// uses `DefaultTokenizer` as the default concrete type for things that are generic
+/// over a `Tokenizer`.
+#[cfg(not(feature = "default_tokenizer"))]
+pub type DefaultTokenizer = NoDefaultTokenizer;
+
+/// Represents a token embedded in a D-dimensional space.
 #[derive(PartialEq, Debug, Clone, PartialOrd)]
-pub struct Embedding<D: EmbeddingDimension = DefaultEmbeddingDimension> {
-    /// The index of each token in the embedding space, where indices\[i\] corresponds to the ith token.
-    pub indices: Vec<D>,
-    /// The value of each token in the embedding space, where values\[i\] corresponds to indices\[i\].
-    pub values: Vec<f32>,
+pub struct TokenEmbedding<D = DefaultTokenEmbedder> {
+    /// The index of the token in the embedding space.
+    pub index: D,
+    /// The value of the token in the embedding space.
+    pub value: f32,
 }
 
-impl<D: EmbeddingDimension> Display for Embedding<D> {
+impl Display for TokenEmbedding {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Embedding {{ indices: {:?}, values: {:?} }}",
-            self.indices, self.values
-        )
+        write!(f, "{:?}", self)
     }
 }
 
-/// Embeds text into a D-dimensional space using the BM25 algorithm.
-pub struct Embedder<D: EmbeddingDimension = DefaultEmbeddingDimension> {
-    tokenizer: Tokenizer,
-    k1: f32,
-    b: f32,
-    avgdl: f32,
-    embedding_dimension: PhantomData<D>,
+/// Represents a document embedded in a D-dimensional space.
+#[derive(PartialEq, Debug, Clone, PartialOrd)]
+pub struct Embedding<D = DefaultTokenEmbedder>(pub Vec<TokenEmbedding<D>>);
+
+impl<D> Deref for Embedding<D> {
+    type Target = Vec<TokenEmbedding<D>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
-impl<D> Display for Embedder<D>
-where
-    D: EmbeddingDimension,
-{
+impl DerefMut for Embedding {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<D> Embedding<D> {
+    /// Returns an iterator over the indices of the embedding.
+    pub fn indices(&self) -> impl Iterator<Item = &D> {
+        self.iter().map(|TokenEmbedding { index, .. }| index)
+    }
+
+    /// Returns an iterator over the values of the embedding.
+    pub fn values(&self) -> impl Iterator<Item = &f32> {
+        self.iter().map(|TokenEmbedding { value, .. }| value)
+    }
+}
+
+impl<D: Debug> Display for Embedding<D> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Embedder {{ k1: {}, b: {}, avgdl: {} }}",
-            self.k1, self.b, self.avgdl
-        )
+        write!(f, "{:?}", self)
     }
 }
 
 /// A trait for embedding. Implement this to customise the embedding space and function.
-pub trait EmbeddingDimension: Eq + Hash + Clone + Debug + Send + Sync {
+pub trait TokenEmbedder {
     /// Embeds a token into the embedding space.
     fn embed(token: &str) -> Self;
 }
 
-impl EmbeddingDimension for u32 {
+impl TokenEmbedder for u32 {
     fn embed(token: &str) -> u32 {
         hash32(token)
     }
 }
 
-impl EmbeddingDimension for u64 {
+impl TokenEmbedder for u64 {
     fn embed(token: &str) -> u64 {
         hash64(token)
     }
 }
 
-impl EmbeddingDimension for usize {
+impl TokenEmbedder for usize {
     fn embed(token: &str) -> usize {
         hash(token)
     }
 }
 
-impl<D: EmbeddingDimension> Embedder<D> {
+/// Embeds text into a D-dimensional space using the BM25 algorithm.
+#[derive(Debug)]
+pub struct Embedder<D = DefaultTokenEmbedder, T = DefaultTokenizer> {
+    tokenizer: T,
+    k1: f32,
+    b: f32,
+    avgdl: f32,
+    token_embedder_type: PhantomData<D>,
+}
+
+impl<D, T> Embedder<D, T> {
     const FALLBACK_AVGDL: f32 = 256.0;
 
     /// Returns the average document length used by the embedder.
@@ -87,25 +126,13 @@ impl<D: EmbeddingDimension> Embedder<D> {
         self.avgdl
     }
 
-    /// Embeds a batch of texts into the embedding space. Use the `parallelism` feature to speed
-    /// this up for large batches.
-    pub fn batch_embed(&self, texts: &[&str]) -> Vec<Embedding<D>> {
-        #[cfg(not(feature = "parallelism"))]
-        let text_iter = texts.iter();
-        #[cfg(feature = "parallelism")]
-        let text_iter = texts.par_iter();
-        text_iter.map(|text| self.embed(text)).collect()
-    }
-
     /// Embeds the given text into the embedding space.
-    pub fn embed(&self, text: &str) -> Embedding<D> {
+    pub fn embed(&self, text: &str) -> Embedding<D>
+    where
+        D: TokenEmbedder + Hash + Eq,
+        T: Tokenizer,
+    {
         let tokens = self.tokenizer.tokenize(text);
-        self.embed_tokens(&tokens.iter().map(|s| s.as_str()).collect::<Vec<_>>())
-    }
-
-    /// Embeds the given tokens into the embedding space. This function lets you use your own
-    /// tokenizer; if this is not your intention, use `embed` instead.
-    pub fn embed_tokens(&self, tokens: &[&str]) -> Embedding<D> {
         let avgdl = if self.avgdl <= 0.0 {
             Self::FALLBACK_AVGDL
         } else {
@@ -120,31 +147,37 @@ impl<D: EmbeddingDimension> Embedder<D> {
         let values: Vec<f32> = indices
             .iter()
             .map(|i| {
-                let term_frequency = *counts.get(i).unwrap_or(&0) as f32;
-                let numerator = term_frequency * (self.k1 + 1.0);
-                let denominator = term_frequency
+                let token_frequency = *counts.get(i).unwrap_or(&0) as f32;
+                let numerator = token_frequency * (self.k1 + 1.0);
+                let denominator = token_frequency
                     + self.k1 * (1.0 - self.b + self.b * (tokens.len() as f32 / avgdl));
                 numerator / denominator
             })
             .collect();
 
-        Embedding { indices, values }
+        Embedding(
+            indices
+                .into_iter()
+                .zip(values)
+                .map(|(index, value)| TokenEmbedding { index, value })
+                .collect(),
+        )
     }
 }
 
-/// A non-consuming builder for Embedder.
-pub struct EmbedderBuilder<D: EmbeddingDimension = DefaultEmbeddingDimension> {
+/// A consuming builder for Embedder.
+pub struct EmbedderBuilder<D = DefaultTokenEmbedder, T = DefaultTokenizer> {
     k1: f32,
     b: f32,
     avgdl: f32,
-    language_mode: LanguageMode,
-    embedding_dimension: PhantomData<D>,
+    tokenizer: T,
+    token_embedder_type: PhantomData<D>,
 }
 
-impl<D: EmbeddingDimension> EmbedderBuilder<D> {
+impl<D, T> EmbedderBuilder<D, T> {
     /// Constructs a new EmbedderBuilder with the given average document length. Use this if you
     /// know the average document length in advance. If you don't, but you have your full corpus
-    /// ahead of time, use `with_fit_to_corpus` instead.
+    /// ahead of time, use `with_fit_to_corpus` or `with_tokenizer_and_fit_to_corpus` instead.
     ///
     /// If you have neither the full corpus nor a sample of it, you can configure the embedder to
     /// disregard document length by setting `b` to 0.0. In this case, it doesn't matter what
@@ -152,27 +185,27 @@ impl<D: EmbeddingDimension> EmbedderBuilder<D> {
     ///
     /// The average document length is the average number of tokens in a document from your corpus;
     /// if you need access to this value, you can construct an Embedder and call `avgdl` on it.
-    pub fn with_avgdl(avgdl: f32) -> EmbedderBuilder<D> {
+    pub fn with_avgdl(avgdl: f32) -> EmbedderBuilder<D, T>
+    where
+        T: Default,
+    {
         EmbedderBuilder {
             k1: 1.2,
             b: 0.75,
             avgdl,
-            language_mode: LanguageMode::default(),
-            embedding_dimension: PhantomData,
+            tokenizer: T::default(),
+            token_embedder_type: PhantomData,
         }
     }
 
     /// Constructs a new EmbedderBuilder with its average document length fit to the given corpus.
-    /// Use this if you have the full corpus (or a sample of it) available in advance.
-    /// Use the `parallelism` feature to speed this up for large corpora. When you call `build`,
-    /// the builder will set the language mode of the Embedder to `language_mode`.
-    pub fn with_fit_to_corpus(
-        language_mode: impl Into<LanguageMode>,
-        corpus: &[&str],
-    ) -> EmbedderBuilder<D> {
-        let language_mode = language_mode.into();
-        let tokenizer = Tokenizer::new(&language_mode);
-
+    /// Use this if you have the full corpus (or a sample of it) available in advance.The embedder
+    /// will assume the given tokenizer. Use the `parallelism` feature to speed the fitting process
+    /// up for large corpora.
+    pub fn with_tokenizer_and_fit_to_corpus(tokenizer: T, corpus: &[&str]) -> EmbedderBuilder<D, T>
+    where
+        T: Tokenizer + Sync,
+    {
         let avgdl = if corpus.is_empty() {
             Embedder::<D>::FALLBACK_AVGDL
         } else {
@@ -190,44 +223,65 @@ impl<D: EmbeddingDimension> EmbedderBuilder<D> {
             k1: 1.2,
             b: 0.75,
             avgdl,
-            language_mode,
-            embedding_dimension: PhantomData,
+            tokenizer,
+            token_embedder_type: PhantomData,
         }
     }
 
     /// Sets the k1 parameter for the embedder. The default value is 1.2.
-    pub fn k1(&mut self, k1: f32) -> &EmbedderBuilder<D> {
-        self.k1 = k1;
-        self
+    pub fn k1(self, k1: f32) -> EmbedderBuilder<D, T> {
+        EmbedderBuilder { k1, ..self }
     }
 
     /// Sets the b parameter for the embedder. The default value is 0.75.
-    pub fn b(&mut self, b: f32) -> &EmbedderBuilder<D> {
-        self.b = b;
-        self
+    pub fn b(self, b: f32) -> EmbedderBuilder<D, T> {
+        EmbedderBuilder { b, ..self }
     }
 
     /// Overrides the average document length for the embedder.
-    pub fn avgdl(&mut self, avgdl: f32) -> &EmbedderBuilder<D> {
-        self.avgdl = avgdl;
-        self
+    pub fn avgdl(self, avgdl: f32) -> EmbedderBuilder<D, T> {
+        EmbedderBuilder { avgdl, ..self }
     }
 
-    /// Sets the language mode for the embedder. The default value is `LanguageMode::Detect`.
-    pub fn language_mode(&mut self, language_mode: impl Into<LanguageMode>) -> &EmbedderBuilder<D> {
-        self.language_mode = language_mode.into();
-        self
+    /// Sets the tokenizer for the embedder.
+    pub fn tokenizer(self, tokenizer: T) -> EmbedderBuilder<D, T> {
+        EmbedderBuilder { tokenizer, ..self }
     }
 
     /// Builds the Embedder.
-    pub fn build(&self) -> Embedder<D> {
+    pub fn build(self) -> Embedder<D, T> {
         Embedder {
-            tokenizer: Tokenizer::new(&self.language_mode),
+            tokenizer: self.tokenizer,
             k1: self.k1,
             b: self.b,
             avgdl: self.avgdl,
-            embedding_dimension: PhantomData,
+            token_embedder_type: PhantomData,
         }
+    }
+}
+
+#[cfg(feature = "default_tokenizer")]
+impl<D> EmbedderBuilder<D, DefaultTokenizer> {
+    /// Constructs a new EmbedderBuilder with its average document length fit to the given corpus.
+    /// Use this if you have the full corpus (or a sample of it) available in advance. This
+    /// function uses the default tokenizer configured with the input language mode. The embedder
+    /// will assume this tokenizer. Use the `parallelism` feature to speed the fitting process up
+    /// for large corpora.
+    pub fn with_fit_to_corpus(
+        language_mode: impl Into<crate::LanguageMode>,
+        corpus: &[&str],
+    ) -> EmbedderBuilder<D, DefaultTokenizer> {
+        let tokenizer = DefaultTokenizer::new(language_mode);
+        EmbedderBuilder::with_tokenizer_and_fit_to_corpus(tokenizer, corpus)
+    }
+
+    /// Sets the language mode for the embedder tokenizer.
+    pub fn language_mode(
+        self,
+        language_mode: impl Into<crate::LanguageMode>,
+    ) -> EmbedderBuilder<D, DefaultTokenizer> {
+        let tokenizer = DefaultTokenizer::new(language_mode);
+        EmbedderBuilder { tokenizer, ..self }
     }
 }
 
@@ -237,10 +291,25 @@ mod tests {
 
     use crate::{
         test_data_loader::tests::{read_recipes, Recipe},
-        Language,
+        Language, LanguageMode,
     };
 
     use super::*;
+
+    impl Embedding {
+        pub fn any() -> Self {
+            Embedding(vec![TokenEmbedding {
+                index: 1,
+                value: 1.0,
+            }])
+        }
+    }
+
+    impl<D> TokenEmbedding<D> {
+        pub fn new(index: D, value: f32) -> Self {
+            TokenEmbedding { index, value }
+        }
+    }
 
     fn embed_recipes(recipe_file: &str, language_mode: LanguageMode) -> Vec<Embedding> {
         let recipes = read_recipes(recipe_file);
@@ -253,35 +322,37 @@ mod tests {
         )
         .build();
 
-        embedder.batch_embed(
-            &recipes
-                .iter()
-                .map(|Recipe { recipe, .. }| recipe.as_str())
-                .collect::<Vec<_>>(),
-        )
+        recipes
+            .iter()
+            .map(|Recipe { recipe, .. }| recipe.as_str())
+            .map(|recipe| embedder.embed(recipe))
+            .collect::<Vec<_>>()
     }
 
     #[test]
     fn it_weights_unique_words_equally() {
-        let embedder = EmbedderBuilder::<u32>::with_avgdl(3.0)
-            .language_mode(Language::English)
-            .build();
+        let embedder = EmbedderBuilder::<u32>::with_avgdl(3.0).build();
         let embedding = embedder.embed("banana apple orange");
 
-        assert!(embedding.indices.len() == 3);
-        assert!(embedding.values.len() == 3);
-        assert!(embedding.values.windows(2).all(|w| w[0] == w[1]));
+        assert!(embedding.len() == 3);
+        assert!(embedding.windows(2).all(|e| e[0].value == e[1].value));
     }
 
     #[test]
     fn it_weights_repeated_words_unequally() {
         let embedder = EmbedderBuilder::<u32>::with_avgdl(3.0)
-            .language_mode(Language::English)
+            .tokenizer(DefaultTokenizer::new(Language::English))
             .build();
         let embedding = embedder.embed("space station station");
 
-        assert!(embedding.indices == vec![866767497, 666609503, 666609503]);
-        assert!(embedding.values == vec![1.0, 1.375, 1.375]);
+        assert!(
+            *embedding
+                == vec![
+                    TokenEmbedding::new(866767497, 1.0),
+                    TokenEmbedding::new(666609503, 1.375),
+                    TokenEmbedding::new(666609503, 1.375)
+                ]
+        );
     }
 
     #[test]
@@ -292,9 +363,8 @@ mod tests {
 
         let embedding = embedder.embed("space station");
 
-        assert!(!embedding.indices.is_empty());
-        assert!(!embedding.values.is_empty());
-        assert!(embedding.values.into_iter().all(|v| v > 0.0));
+        assert!(!embedding.is_empty());
+        assert!(embedding.iter().all(|e| e.value > 0.0));
     }
 
     #[test]
@@ -303,30 +373,7 @@ mod tests {
 
         let embedding = embedder.embed("space station");
 
-        assert!(!embedding.indices.is_empty());
-        assert!(!embedding.values.is_empty());
-    }
-
-    #[test]
-    fn batch_embedding_is_consistent() {
-        let corpus = ["The fire crackled, casting flickering shadows on the cabin walls."; 1000];
-        let embedder = EmbedderBuilder::<u32>::with_avgdl(7.0)
-            .language_mode(Language::English)
-            .build();
-
-        let embeddings = embedder.batch_embed(&corpus);
-
-        assert!(embeddings.windows(2).all(|e| e[0] == e[1]));
-    }
-
-    #[test]
-    fn token_embedding_is_consistent() {
-        let embedder = EmbedderBuilder::<u32>::with_avgdl(2.0).build();
-
-        let embedding = embedder.embed("space station");
-        let token_embedding = embedder.embed_tokens(&["space", "station"]);
-
-        assert_eq!(embedding, token_embedding);
+        assert!(!embedding.is_empty());
     }
 
     #[test]
@@ -335,8 +382,7 @@ mod tests {
 
         let embedding = embedder.embed("");
 
-        assert!(embedding.indices.is_empty());
-        assert!(embedding.values.is_empty());
+        assert!(embedding.is_empty());
     }
 
     #[test]
@@ -344,17 +390,20 @@ mod tests {
         #[derive(Eq, PartialEq, Hash, Clone, Debug)]
         struct MyType(u32);
 
-        impl EmbeddingDimension for MyType {
+        impl TokenEmbedder for MyType {
             fn embed(_: &str) -> Self {
                 MyType(42)
             }
         }
 
-        let bm25_embedder = EmbedderBuilder::<MyType>::with_avgdl(2.0).build();
+        let embedder = EmbedderBuilder::<MyType>::with_avgdl(2.0).build();
 
-        let embedding = bm25_embedder.embed("space station");
+        let embedding = embedder.embed("space station");
 
-        assert_eq!(embedding.indices, vec![MyType(42), MyType(42)]);
+        assert_eq!(
+            embedding.indices().cloned().collect::<Vec<_>>(),
+            vec![MyType(42), MyType(42)]
+        );
     }
 
     #[test]
@@ -373,5 +422,30 @@ mod tests {
         insta::with_settings!({snapshot_path => "../snapshots"}, {
             assert_debug_snapshot!(embeddings);
         });
+    }
+
+    #[test]
+    fn it_allows_customisation_of_tokenizer() {
+        #[derive(Default)]
+        struct MyTokenizer {}
+
+        impl Tokenizer for MyTokenizer {
+            fn tokenize(&self, input_text: &str) -> Vec<String> {
+                input_text
+                    .split("T")
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_string)
+                    .collect()
+            }
+        }
+
+        let embedder = EmbedderBuilder::<u32, MyTokenizer>::with_avgdl(1.0).build();
+
+        let embedding = embedder.embed("CupTofTtea");
+
+        assert_eq!(
+            embedding.indices().cloned().collect::<Vec<_>>(),
+            vec![3568447556, 3221979461, 415655421]
+        );
     }
 }

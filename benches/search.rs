@@ -55,6 +55,7 @@ fn create_recipe_search_engine(language_mode: LanguageMode) -> SearchEngine<Stri
 }
 
 #[divan::bench(args = [
+    #[cfg(feature = "language_detection")]
     LanguageMode::Detect,
     LanguageMode::Fixed(Language::English),
 ])]
@@ -92,6 +93,7 @@ fn recipes_index_creation_language_mode(bencher: Bencher, language_mode: &Langua
 }
 
 #[divan::bench(args = [
+    #[cfg(feature = "language_detection")]
     LanguageMode::Detect,
     LanguageMode::Fixed(Language::English),
 ])]

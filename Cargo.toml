@@ -1,6 +1,6 @@
 [package]
 name = "bm25"
-version = "1.0.0"
+version = "1.0.1"
 description = "BM25 embedder and search engine"
 repository = "https://github.com/Michael-JB/bm25"
 license = "MIT"

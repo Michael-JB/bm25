@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2024-11-10
+
+### Fixed
+
+- Correctly embed the README in the crate documentation. docs.rs should now display the README
+  correctly.
+
 ## [1.0.0] - 2024-11-10
 
 ### Added

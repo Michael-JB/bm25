@@ -7,7 +7,7 @@ use std::{
     hash::Hash,
 };
 
-/// A document scored by the BM25 algorithm.
+/// A document scored by the BM25 algorithm. K is the type of the document id.
 #[derive(PartialEq, Debug)]
 pub struct ScoredDocument<K> {
     /// The id of the document.

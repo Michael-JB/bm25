@@ -1,11 +1,7 @@
-//! A BM25 embedder, scorer and search engine.
-
 #![warn(missing_docs)]
-
-#[cfg(feature = "language_detection")]
-pub mod docs {
-    #![doc = include_str!("../README.md")]
-}
+#![cfg_attr(feature = "language_detection", doc = include_str!("../README.md"))]
+// Suppress missing docs warning for this file
+//!
 
 #[cfg(test)]
 mod test_data_loader;

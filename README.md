@@ -218,14 +218,6 @@ assert_eq!(
     [3288102823240002853, 7123809554392261272]
 );
 
-// Embed into a usize-dimensional space
-let embedder = EmbedderBuilder::<usize>::with_avgdl(2.0).build();
-let embedding = embedder.embed(text);
-assert_eq!(
-    embedding.indices().cloned().collect::<Vec<_>>(),
-    [3288102823240002853, 7123809554392261272]
-);
-
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 struct MyType(u32);
 impl TokenEmbedder for MyType {

@@ -11,8 +11,8 @@ use std::{
     marker::PhantomData,
 };
 
-/// A document that you can insert into a search engine. K is the type of the document, allowing
-/// you to use any type as a document id. Note that it is more effient to use a numeric type.
+/// A document that you can insert into a search engine. K is the type of the document id. Note
+/// that it is more effient to use a numeric type.
 #[derive(Eq, PartialEq, Debug, Clone, PartialOrd, Hash)]
 pub struct Document<K> {
     /// A unique identifier for the document.
@@ -47,8 +47,8 @@ pub struct SearchResult<K> {
     pub score: f32,
 }
 
-/// A search engine that ranks documents with BM25. K is the type of the document id and D is the
-/// type of the token embedder.
+/// A search engine that ranks documents with BM25. K is the type of the document id, D is the
+/// type of the token embedder and T is the type of the tokenizer.
 pub struct SearchEngine<K, D = DefaultTokenEmbedder, T = DefaultTokenizer> {
     // The embedder used to convert documents into embeddings.
     embedder: Embedder<D, T>,

@@ -49,16 +49,16 @@ pub struct SearchResult<K> {
 
 /// A search engine that ranks documents with BM25. K is the type of the document id, D is the
 /// type of the token embedder and T is the type of the tokenizer.
-pub struct SearchEngine<K, D = DefaultTokenEmbedder, T = DefaultTokenizer> {
+pub struct SearchEngine<K, D: TokenEmbedder = DefaultTokenEmbedder, T = DefaultTokenizer> {
     // The embedder used to convert documents into embeddings.
     embedder: Embedder<D, T>,
     // A scorer for document embeddings.
-    scorer: Scorer<K, D>,
+    scorer: Scorer<K, D::EmbeddingSpace>,
     // A mapping from document ids to document contents.
     documents: HashMap<K, String>,
 }
 
-impl<K: Debug, D: Debug, T: Debug> Debug for SearchEngine<K, D, T> {
+impl<K: Debug, D: TokenEmbedder + Debug, T: Debug> Debug for SearchEngine<K, D, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -71,7 +71,8 @@ impl<K: Debug, D: Debug, T: Debug> Debug for SearchEngine<K, D, T> {
 impl<K, D, T> SearchEngine<K, D, T>
 where
     K: Hash + Eq + Clone,
-    D: TokenEmbedder + Hash + Eq + Clone,
+    D: TokenEmbedder,
+    D::EmbeddingSpace: Eq + Hash + Clone,
     T: Tokenizer,
 {
     /// Upserts a document into the search engine. If a document with the same id already exists,
@@ -131,7 +132,8 @@ where
     }
 }
 
-/// A consuming builder for SearchEngine.
+/// A consuming builder for SearchEngine. K is the type of the document id, D is the type of the
+/// token embedder and T is the type of the tokenizer.
 pub struct SearchEngineBuilder<K, D = DefaultTokenEmbedder, T = DefaultTokenizer> {
     embedder_builder: EmbedderBuilder<D, T>,
     documents: Vec<Document<K>>,
@@ -142,7 +144,8 @@ pub struct SearchEngineBuilder<K, D = DefaultTokenEmbedder, T = DefaultTokenizer
 impl<K, D, T> SearchEngineBuilder<K, D, T>
 where
     K: Hash + Eq + Clone,
-    D: TokenEmbedder + Hash + Eq + Clone,
+    D: TokenEmbedder,
+    D::EmbeddingSpace: Eq + Hash + Clone,
     T: Tokenizer + Sync,
 {
     /// Constructs a new SearchEngineBuilder with the given average document length. Use this if you
@@ -241,7 +244,7 @@ where
     pub fn build(self) -> SearchEngine<K, D, T> {
         let mut search_engine = SearchEngine::<K, D, T> {
             embedder: self.embedder_builder.build(),
-            scorer: Scorer::new(),
+            scorer: Scorer::<K, D::EmbeddingSpace>::new(),
             documents: HashMap::new(),
         };
         for document in self.documents {
@@ -255,7 +258,8 @@ where
 impl<K, D> SearchEngineBuilder<K, D, DefaultTokenizer>
 where
     K: Hash + Eq + Clone,
-    D: TokenEmbedder + Hash + Eq + Clone,
+    D: TokenEmbedder,
+    D::EmbeddingSpace: Eq + Hash + Clone,
 {
     /// Constructs a new SearchEngineBuilder with the given documents. The search engine will fit
     /// to the given documents, using the default tokenizer configured with the given language mode.

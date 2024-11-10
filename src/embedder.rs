@@ -11,6 +11,7 @@ use std::{
 };
 
 pub type DefaultTokenEmbedder = u32;
+pub type DefaultEmbeddingSpace = u32;
 
 /// The default tokenizer is available via the `default_tokenizer` feature. It should fit most
 /// use-cases. It splits on whitespace and punctuation, removes stop words and stems the
@@ -35,7 +36,7 @@ pub type DefaultTokenizer = NoDefaultTokenizer;
 
 /// Represents a token embedded in a D-dimensional space.
 #[derive(PartialEq, Debug, Clone, PartialOrd)]
-pub struct TokenEmbedding<D = DefaultTokenEmbedder> {
+pub struct TokenEmbedding<D = DefaultEmbeddingSpace> {
     /// The index of the token in the embedding space.
     pub index: D,
     /// The value of the token in the embedding space.
@@ -50,7 +51,7 @@ impl Display for TokenEmbedding {
 
 /// Represents a document embedded in a D-dimensional space.
 #[derive(PartialEq, Debug, Clone, PartialOrd)]
-pub struct Embedding<D = DefaultTokenEmbedder>(pub Vec<TokenEmbedding<D>>);
+pub struct Embedding<D = DefaultEmbeddingSpace>(pub Vec<TokenEmbedding<D>>);
 
 impl<D> Deref for Embedding<D> {
     type Target = Vec<TokenEmbedding<D>>;
@@ -86,29 +87,35 @@ impl<D: Debug> Display for Embedding<D> {
 
 /// A trait for embedding. Implement this to customise the embedding space and function.
 pub trait TokenEmbedder {
+    /// The output type of the embedder, i.e., the embedding space.
+    type EmbeddingSpace;
     /// Embeds a token into the embedding space.
-    fn embed(token: &str) -> Self;
+    fn embed(token: &str) -> Self::EmbeddingSpace;
 }
 
 impl TokenEmbedder for u32 {
+    type EmbeddingSpace = Self;
     fn embed(token: &str) -> u32 {
         hash32(token)
     }
 }
 
 impl TokenEmbedder for u64 {
+    type EmbeddingSpace = Self;
     fn embed(token: &str) -> u64 {
         hash64(token)
     }
 }
 
 impl TokenEmbedder for usize {
+    type EmbeddingSpace = Self;
     fn embed(token: &str) -> usize {
         hash(token)
     }
 }
 
-/// Embeds text into a D-dimensional space using the BM25 algorithm.
+/// Embeds text into the D-dimensional BM25 embedding space. D is the type of the token embedder
+/// and T is the type of the tokenizer.
 #[derive(Debug)]
 pub struct Embedder<D = DefaultTokenEmbedder, T = DefaultTokenizer> {
     tokenizer: T,
@@ -127,9 +134,10 @@ impl<D, T> Embedder<D, T> {
     }
 
     /// Embeds the given text into the embedding space.
-    pub fn embed(&self, text: &str) -> Embedding<D>
+    pub fn embed(&self, text: &str) -> Embedding<D::EmbeddingSpace>
     where
-        D: TokenEmbedder + Hash + Eq,
+        D: TokenEmbedder,
+        D::EmbeddingSpace: Eq + Hash,
         T: Tokenizer,
     {
         let tokens = self.tokenizer.tokenize(text);
@@ -138,7 +146,7 @@ impl<D, T> Embedder<D, T> {
         } else {
             self.avgdl
         };
-        let indices: Vec<D> = tokens.iter().map(|s| D::embed(s)).collect();
+        let indices: Vec<D::EmbeddingSpace> = tokens.iter().map(|s| D::embed(s)).collect();
         let counts = indices.iter().fold(HashMap::new(), |mut acc, token| {
             let count = acc.entry(token).or_insert(0);
             *count += 1;
@@ -313,7 +321,7 @@ mod tests {
 
     fn embed_recipes(recipe_file: &str, language_mode: LanguageMode) -> Vec<Embedding> {
         let recipes = read_recipes(recipe_file);
-        let embedder = EmbedderBuilder::with_fit_to_corpus(
+        let embedder: Embedder = EmbedderBuilder::with_fit_to_corpus(
             language_mode,
             &recipes
                 .iter()
@@ -391,6 +399,7 @@ mod tests {
         struct MyType(u32);
 
         impl TokenEmbedder for MyType {
+            type EmbeddingSpace = Self;
             fn embed(_: &str) -> Self {
                 MyType(42)
             }

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Introduces `TokenEmbedder::EmbeddingSpace` to decouple the output of `TokenEmbedder` from `Self`.
+  This lets you customise the output of your `TokenEmbedder` without changing its type.
+
 ## [1.0.1] - 2024-11-10
 
 ### Fixed

@@ -221,6 +221,7 @@ assert_eq!(
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 struct MyType(u32);
 impl TokenEmbedder for MyType {
+    type EmbeddingSpace = Self;
     fn embed(_token: &str) -> Self {
         MyType(42)
     }

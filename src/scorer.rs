@@ -1,5 +1,4 @@
-use crate::embedder::DefaultTokenEmbedder;
-use crate::embedder::Embedding;
+use crate::embedder::{DefaultEmbeddingSpace, Embedding};
 use std::{
     cmp::Ordering,
     collections::{HashMap, HashSet},
@@ -17,9 +16,9 @@ pub struct ScoredDocument<K> {
 }
 
 /// Efficiently scores the relevance of a query embedding to document embeddings using BM25.
-/// K is the type of the document id and D is the type of the token embedder.
+/// K is the type of the document id and D is the type of the embedding space.
 #[derive(Default)]
-pub struct Scorer<K, D = DefaultTokenEmbedder> {
+pub struct Scorer<K, D = DefaultEmbeddingSpace> {
     // A mapping from document ids to the document embeddings.
     embeddings: HashMap<K, Embedding<D>>,
     // A mapping from token indices to the number of documents that contain that token.

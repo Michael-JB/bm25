@@ -35,9 +35,10 @@ fn language_mode(bencher: Bencher, language_mode: &LanguageMode) {
 }
 
 #[divan::bench(types = [usize, u32, u64], sample_count = 10000)]
-fn dimension<T>(bencher: Bencher)
+fn token_embedder<T>(bencher: Bencher)
 where
-    T: TokenEmbedder + Hash + Eq,
+    T: TokenEmbedder,
+    T::EmbeddingSpace: Hash + Eq,
 {
     bencher
         .with_inputs(|| {

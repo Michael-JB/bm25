@@ -1,6 +1,6 @@
 [package]
 name = "bm25"
-version = "2.0.0"
+version = "2.0.1"
 description = "BM25 embedder and search engine"
 repository = "https://github.com/Michael-JB/bm25"
 license = "MIT"
@@ -22,7 +22,7 @@ default = ["default_tokenizer"]
 
 # The default tokenizer is a good choice for most use-cases. It splits on whitespace and
 # punctuation, removes stop words, and stems the remaining words.
-default_tokenizer = ["dep:cached", "stop-words/nltk", "dep:rust-stemmers"]
+default_tokenizer = ["dep:cached", "dep:stop-words", "dep:rust-stemmers"]
 
 # With language detection enabled, you can configre the default tokenizer to detect the
 # language of the input text.
@@ -36,7 +36,7 @@ cached = { version = "0.54.0", optional = true }
 fxhash = "0.2.1"
 rayon = { version = "1.10.0", optional = true }
 rust-stemmers = { version = "1.2.0", optional = true }
-stop-words = { version = "0.8.0", optional = true, default-features = false }
+stop-words = { version = "0.8.0", optional = true, default-features = false, features = ["nltk"] }
 whichlang = { version = "0.1.0", optional = true }
 
 [dev-dependencies]

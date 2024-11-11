@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2024-11-11
+
+### Fixed
+
+- Remove unintentionally re-exposed `stop-words` crate feature.
+
 ## [2.0.0] - 2024-11-10
 
 ### Changed

@@ -462,6 +462,34 @@ mod tests {
     }
 
     #[test]
+    fn it_matches_common_unicode_equivalents() {
+        let corpus = vec!["étude"];
+        let search_engine =
+            SearchEngineBuilder::<u32>::with_corpus(Language::French, corpus).build();
+
+        let results_1 = search_engine.search("etude", None);
+        let results_2 = search_engine.search("étude", None);
+
+        assert_eq!(results_1.len(), 1);
+        assert_eq!(results_2.len(), 1);
+        assert_eq!(results_1, results_2);
+    }
+
+    #[test]
+    fn it_can_search_for_emoji() {
+        let corpus = vec!["🔥"];
+        let search_engine =
+            SearchEngineBuilder::<u32>::with_corpus(Language::English, corpus).build();
+
+        let results_1 = search_engine.search("🔥", None);
+        let results_2 = search_engine.search("fire", None);
+
+        assert_eq!(results_1.len(), 1);
+        assert_eq!(results_2.len(), 1);
+        assert_eq!(results_1, results_2);
+    }
+
+    #[test]
     fn it_matches_snapshot_en() {
         let search_engine = create_recipe_search_engine("recipes_en.csv", Language::English);
 

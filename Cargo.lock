@@ -34,10 +34,11 @@ checksum = "b048fb63fd8b5923fc5aa7b340d8e156aec7ec02f0c78fa8a6ddc2613f6f71de"
 
 [[package]]
 name = "bm25"
-version = "2.0.1"
+version = "2.1.0"
 dependencies = [
  "cached",
  "csv",
+ "deunicode",
  "divan",
  "fxhash",
  "insta",
@@ -222,6 +223,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "deunicode"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "339544cc9e2c4dc3fc7149fd630c5f22263a4fdf18a98afd0075784968b5cf00"
 
 [[package]]
 name = "divan"

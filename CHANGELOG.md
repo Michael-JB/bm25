@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Customisation of the `DefaultTokenizer`. You can now enable/disable normalization, stemming
+  and stop word removal via the new `DefaultTokenizer::builder()`.
+
+### Changed
+
+- `DefaultTokenizer` now normalizes unicode. This makes search more lenient for languages with
+  non-ASCII characters. Note that this is a breaking change for the default tokenizer. If you
+  require the behaviour of the previous version, you can create your default tokenizer with the
+  new builder: `DefaultTokenizer::builder().normalization(false).build()`.
+
 ## [2.0.1] - 2024-11-11
 
 ### Fixed

@@ -152,10 +152,29 @@ let embedder: Embedder = EmbedderBuilder::with_avgdl(64.0)
 
 #### Tokenizer
 
-The default tokenizer detects language, splits on whitespace and punctuation, removes stop words
-and stems the remaining words. While this works well for most languages and use-cases, this crate
-makes it easy for you to provide your own tokenizer. All you have to do is implement the
-`Tokenizer` trait.
+The embedder uses a tokenizer to convert text into a sequence of tokens to embed. The default
+tokenizer detects language, normalizes unicode, splits on whitespace and punctuation, removes stop
+words and stems the remaining words. You can customise its behaviour by using the builder.
+
+```rust
+use bm25::{DefaultTokenizer, Language, Tokenizer};
+
+let tokenizer = DefaultTokenizer::builder()
+    .language_mode(Language::English)
+    .normalization(true) // Normalize unicode (e.g., 'é' -> 'e', '🍕' -> 'pizza', etc.)
+    .stopwords(false) // Remove common words with little meaning (e.g., 'the', 'and', etc.)
+    .stemming(false) // Reduce words to their root form (e.g., 'running' -> 'run')
+    .build();
+
+let text = "Slice of 🍕";
+
+let tokens = tokenizer.tokenize(text);
+
+assert_eq!(tokens, vec!["slice", "of", "pizza"]);
+```
+
+While this works well for most languages and use-cases, this crate makes it easy for you to provide
+your own tokenizer. All you have to do is implement the `Tokenizer` trait.
 
 ```rust
 use bm25::{EmbedderBuilder, Embedding, Tokenizer};

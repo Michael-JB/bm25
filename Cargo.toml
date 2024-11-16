@@ -1,7 +1,7 @@
 [package]
 name = "bm25"
-version = "2.0.1"
-description = "BM25 embedder and search engine"
+version = "2.1.0"
+description = "BM25 embedder, scorer, and search engine"
 repository = "https://github.com/Michael-JB/bm25"
 license = "MIT"
 edition = "2021"
@@ -20,11 +20,11 @@ all-features = true
 [features]
 default = ["default_tokenizer"]
 
-# The default tokenizer is a good choice for most use-cases. It splits on whitespace and
-# punctuation, removes stop words, and stems the remaining words.
-default_tokenizer = ["dep:cached", "dep:stop-words", "dep:rust-stemmers"]
+# The default tokenizer is a good choice for most use-cases. It normalizes unicode, splits on
+# whitespace and punctuation, removes stop words, and stems the remaining words.
+default_tokenizer = ["dep:cached", "dep:stop-words", "dep:rust-stemmers", "dep:deunicode"]
 
-# With language detection enabled, you can configre the default tokenizer to detect the
+# With language detection enabled, you can configure the default tokenizer to detect the
 # language of the input text.
 language_detection = ["dep:whichlang", "default_tokenizer"]
 
@@ -33,6 +33,7 @@ parallelism = ["dep:rayon"]
 
 [dependencies]
 cached = { version = "0.54.0", optional = true }
+deunicode = { version = "1.6.0", optional = true }
 fxhash = "0.2.1"
 rayon = { version = "1.10.0", optional = true }
 rust-stemmers = { version = "1.2.0", optional = true }

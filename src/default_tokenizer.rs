@@ -1,6 +1,7 @@
 use cached::proc_macro::cached;
 use rust_stemmers::{Algorithm as StemmingAlgorithm, Stemmer};
 use std::{
+    borrow::Cow,
     collections::HashSet,
     fmt::{self, Debug},
 };
@@ -134,42 +135,133 @@ impl TryFrom<&Language> for StopWordLanguage {
     }
 }
 
+fn normalize(text: &str) -> Cow<str> {
+    deunicode::deunicode_with_tofu_cow(text, "[?]")
+}
+
 #[cached(size = 16)]
-fn get_stopwords(language: Language) -> HashSet<String> {
+fn get_stopwords(language: Language, normalized: bool) -> HashSet<String> {
     match TryInto::<StopWordLanguage>::try_into(&language) {
         Err(_) => HashSet::new(),
-        Ok(lang) => stop_words::get(lang).into_iter().collect(),
+        Ok(lang) => stop_words::get(lang)
+            .into_iter()
+            .map(|w| match normalized {
+                true => normalize(&w).into(),
+                false => w,
+            })
+            .collect(),
     }
 }
 
-pub struct DefaultTokenizer {
-    language_mode: LanguageMode,
+fn get_stemmer(language: &Language) -> Stemmer {
+    Stemmer::create(language.into())
+}
+
+#[derive(Clone, Debug)]
+struct Settings {
+    stemming: bool,
+    stopwords: bool,
+    normalization: bool,
+}
+
+impl Settings {
+    fn new(stemming: bool, stopwords: bool, normalization: bool) -> Self {
+        Settings {
+            stemming,
+            stopwords,
+            normalization,
+        }
+    }
+}
+
+struct Components {
+    settings: Settings,
+    normalizer: fn(&str) -> Cow<str>,
     stemmer: Option<Stemmer>,
     stopwords: HashSet<String>,
 }
 
+impl Components {
+    fn new(settings: Settings, language: Option<&Language>) -> Self {
+        let stemmer = match language {
+            Some(lang) => match settings.stemming {
+                true => Some(get_stemmer(lang)),
+                false => None,
+            },
+            None => None,
+        };
+        let stopwords = match language {
+            Some(lang) => match settings.stopwords {
+                true => get_stopwords(lang.clone(), settings.normalization),
+                false => HashSet::new(),
+            },
+            None => HashSet::new(),
+        };
+        let normalizer: fn(&str) -> Cow<str> = match settings.normalization {
+            true => normalize,
+            false => |text: &str| Cow::from(text),
+        };
+        Self {
+            settings,
+            stemmer,
+            stopwords,
+            normalizer,
+        }
+    }
+}
+
+#[non_exhaustive]
+enum Resources {
+    Static(Components),
+    #[cfg(feature = "language_detection")]
+    Dynamic(Settings),
+}
+
+pub struct DefaultTokenizer {
+    resources: Resources,
+}
+
 impl Debug for DefaultTokenizer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "DefaultTokenizer({:?})", self.language_mode)
+        let settings = match &self.resources {
+            Resources::Static(components) => components.settings.clone(),
+            #[cfg(feature = "language_detection")]
+            Resources::Dynamic(settings) => settings.clone(),
+        };
+        write!(f, "DefaultTokenizer({:?})", settings)
     }
 }
 
 impl DefaultTokenizer {
+    /// Creates a new `DefaultTokenizer` with the given `LanguageMode`.
     pub fn new(language_mode: impl Into<LanguageMode>) -> DefaultTokenizer {
+        Self::builder().language_mode(language_mode).build()
+    }
+
+    /// Creates a new `DefaultTokenizerBuilder` that you can use to customise the tokenizer.
+    pub fn builder() -> DefaultTokenizerBuilder {
+        DefaultTokenizerBuilder::new()
+    }
+
+    fn _new(
+        language_mode: impl Into<LanguageMode>,
+        normalization: bool,
+        stemming: bool,
+        stopwords: bool,
+    ) -> DefaultTokenizer {
         let language_mode = &language_mode.into();
-        DefaultTokenizer {
-            language_mode: language_mode.clone(),
-            stemmer: match language_mode {
-                #[cfg(feature = "language_detection")]
-                LanguageMode::Detect => None,
-                LanguageMode::Fixed(lang) => Some(Stemmer::create(lang.into())),
-            },
-            stopwords: match language_mode {
-                #[cfg(feature = "language_detection")]
-                LanguageMode::Detect => HashSet::new(),
-                LanguageMode::Fixed(lang) => get_stopwords(lang.clone()),
-            },
-        }
+        let settings = Settings::new(stemming, stopwords, normalization);
+        let resources = match language_mode {
+            #[cfg(feature = "language_detection")]
+            LanguageMode::Detect => Resources::Dynamic(settings),
+            LanguageMode::Fixed(lang) => Resources::Static(Components::new(settings, Some(lang))),
+        };
+        DefaultTokenizer { resources }
+    }
+
+    #[cfg(feature = "language_detection")]
+    fn detect_language(text: &str) -> Option<Language> {
+        Language::try_from(whichlang::detect_language(text)).ok()
     }
 
     fn split_by_whitespace_and_punctuation(text: &str) -> impl Iterator<Item = &'_ str> {
@@ -177,51 +269,36 @@ impl DefaultTokenizer {
             .filter(|s| !s.is_empty())
     }
 
-    fn stem<'a>(
-        &self,
-        stemmer: Option<&Stemmer>,
-        words: impl Iterator<Item = &'a str> + 'a,
-    ) -> Vec<String> {
-        words
-            .map(|word| match stemmer {
-                Some(stemmer) => stemmer.stem(word).to_string(),
-                None => word.to_string(),
-            })
-            .collect()
-    }
-
-    fn _tokenize(
-        &self,
-        input_text: &str,
-        stemmer: Option<&Stemmer>,
-        stopwords: &HashSet<String>,
-    ) -> Vec<String> {
-        let text = input_text.to_lowercase();
-        let tokens = DefaultTokenizer::split_by_whitespace_and_punctuation(&text);
-        let tokens = tokens.filter(|token| !stopwords.contains(*token));
-        self.stem(stemmer, tokens)
+    fn _tokenize(&self, input_text: &str, components: &Components) -> Vec<String> {
+        // Normalize
+        let text = (components.normalizer)(&input_text);
+        // Transform to lowercase (required for stemming and stopwords)
+        let text = text.to_lowercase();
+        // Split
+        let tokens = Self::split_by_whitespace_and_punctuation(&text);
+        // Remove stopwords
+        let tokens = tokens.filter(|token| !components.stopwords.contains(*token));
+        // Stem
+        let tokens = tokens.map(|token| match &components.stemmer {
+            Some(stemmer) => stemmer.stem(token).to_string(),
+            None => token.to_string(),
+        });
+        tokens.collect()
     }
 
     fn tokenize(&self, input_text: &str) -> Vec<String> {
         if input_text.is_empty() {
             return Vec::new();
         }
-        match &self.language_mode {
-            #[cfg(feature = "language_detection")]
-            LanguageMode::Detect => {
-                let detected_language =
-                    Language::try_from(whichlang::detect_language(input_text)).ok();
-                let stemmer = detected_language
-                    .as_ref()
-                    .map(|lang| Stemmer::create(lang.into()));
-                let stopwords = match &detected_language {
-                    Some(lang) => get_stopwords(lang.clone()),
-                    None => HashSet::new(),
-                };
-                return self._tokenize(input_text, stemmer.as_ref(), &stopwords);
+        match &self.resources {
+            Resources::Static(components) => {
+                return self._tokenize(input_text, components);
             }
-            LanguageMode::Fixed(_) => {
-                return self._tokenize(input_text, self.stemmer.as_ref(), &self.stopwords);
+            #[cfg(feature = "language_detection")]
+            Resources::Dynamic(settings) => {
+                let detected_language = Self::detect_language(input_text);
+                let components = Components::new(settings.clone(), detected_language.as_ref());
+                return self._tokenize(input_text, &components);
             }
         }
     }
@@ -236,6 +313,65 @@ impl Tokenizer for DefaultTokenizer {
 impl Default for DefaultTokenizer {
     fn default() -> Self {
         DefaultTokenizer::new(LanguageMode::default())
+    }
+}
+
+pub struct DefaultTokenizerBuilder {
+    language_mode: LanguageMode,
+    normalization: bool,
+    stemming: bool,
+    stopwords: bool,
+}
+
+impl DefaultTokenizerBuilder {
+    /// Creates a new `DefaultTokenizerBuilder`.
+    pub fn new() -> DefaultTokenizerBuilder {
+        DefaultTokenizerBuilder {
+            language_mode: LanguageMode::default(),
+            normalization: true,
+            stemming: true,
+            stopwords: true,
+        }
+    }
+
+    /// Sets the language mode used by the tokenizer. Default is `Language::English`.
+    pub fn language_mode(mut self, language_mode: impl Into<LanguageMode>) -> Self {
+        self.language_mode = language_mode.into();
+        self
+    }
+
+    /// Enables or disables normalization. Normalization converts unicode characters to ASCII.
+    /// (With normalization, 'é' -> 'e', '🍕' -> 'pizza', etc.)
+    /// Default is `true`.
+    pub fn normalization(mut self, normalization: bool) -> Self {
+        self.normalization = normalization;
+        self
+    }
+
+    /// Enables or disables stemming. Stemming reduces words to their root form.
+    /// (With stemming, 'running' -> 'run', 'connection' -> 'connect', etc.)
+    /// Default is `true`.
+    pub fn stemming(mut self, stemming: bool) -> Self {
+        self.stemming = stemming;
+        self
+    }
+
+    /// Enables or disables stopwords. Stopwords are common words that carry little meaning.
+    /// (With stopwords, 'the', 'and', 'is', etc. are removed.)
+    /// Default is `true`.
+    pub fn stopwords(mut self, stopwords: bool) -> Self {
+        self.stopwords = stopwords;
+        self
+    }
+
+    /// Builds the `DefaultTokenizer`.
+    pub fn build(self) -> DefaultTokenizer {
+        DefaultTokenizer::_new(
+            self.language_mode,
+            self.normalization,
+            self.stemming,
+            self.stopwords,
+        )
     }
 }
 
@@ -338,6 +474,29 @@ mod tests {
     }
 
     #[test]
+    fn it_tokenizes_emojis_as_text() {
+        let text = "🍕 🚀 🍋";
+        let tokenizer = DefaultTokenizer::new(Language::English);
+
+        let tokens = tokenizer.tokenize(text);
+
+        assert_eq!(tokens, vec!["pizza", "rocket", "lemon"]);
+    }
+
+    #[test]
+    fn it_converts_unicode_to_ascii() {
+        let text = "gemüse, Gießen";
+        let tokenizer = DefaultTokenizer::builder()
+            .language_mode(Language::German)
+            .stemming(false)
+            .build();
+
+        let tokens = tokenizer.tokenize(text);
+
+        assert_eq!(tokens, vec!["gemuse", "giessen"]);
+    }
+
+    #[test]
     #[cfg(feature = "language_detection")]
     fn it_handles_empty_input() {
         let text = "";
@@ -382,5 +541,48 @@ mod tests {
         insta::with_settings!({snapshot_path => "../snapshots"}, {
             assert_debug_snapshot!(tokens);
         });
+    }
+
+    #[test]
+    fn it_does_not_convert_unicode_when_normalization_disabled() {
+        let text = "étude";
+        let tokenizer = DefaultTokenizer::builder()
+            .language_mode(Language::French)
+            .normalization(false)
+            .stemming(false)
+            .build();
+
+        let tokens = tokenizer.tokenize(text);
+
+        assert_eq!(tokens, vec!["étude"]);
+    }
+
+    #[test]
+    fn it_does_not_remove_stopwords_when_stopwords_disabled() {
+        let text = "i my myself we you you're";
+        let tokenizer = DefaultTokenizer::builder()
+            .language_mode(Language::English)
+            .stopwords(false)
+            .build();
+
+        let tokens = tokenizer.tokenize(text);
+
+        assert_eq!(tokens, vec!["i", "my", "myself", "we", "you", "you", "re",]);
+    }
+
+    #[test]
+    fn it_does_not_stem_when_stemming_disabled() {
+        let text = "connection connections connective connect";
+        let tokenizer = DefaultTokenizer::builder()
+            .language_mode(Language::English)
+            .stemming(false)
+            .build();
+
+        let tokens = tokenizer.tokenize(text);
+
+        assert_eq!(
+            tokens,
+            vec!["connection", "connections", "connective", "connect"]
+        );
     }
 }

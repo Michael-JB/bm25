@@ -8,90 +8,90 @@ expression: results
             id: "Apfelkuchen",
             contents: "Um Apfelkuchen zu machen, heizen Sie Ihren Ofen auf 220°C (425°F) vor. In einer großen Schüssel mischen Sie 6 geschälte und in Scheiben geschnittene Äpfel mit 1/2 Tasse Zucker, 1 Teelöffel Zimt und 1/4 Teelöffel Muskatnuss. Die Äpfel gleichmäßig bedecken. Rollen Sie einen Teigboden aus und legen Sie ihn in eine 9-Zoll-Pie-Form. Gießen Sie die Apfelmischung in den Teig und geben Sie 2 Esslöffel Butter darauf. Rollen Sie den zweiten Teigboden aus und legen Sie ihn über die Äpfel, drücken Sie die Ränder zusammen, um ihn zu verschließen. Schneiden Sie einige Schlitze in den oberen Teig, um Dampf entweichen zu lassen. Backen Sie den Kuchen 45-50 Minuten lang, bis die Kruste goldbraun und die Füllung blubbert. Lassen Sie den Kuchen abkühlen, bevor Sie ihn servieren.",
         },
-        score: 0.9877103,
+        score: 0.98758096,
     },
     SearchResult {
         document: Document {
             id: "Auberginen-Parmesan",
             contents: "Um Auberginen-Parmesan zuzubereiten, heizen Sie Ihren Ofen auf 190°C (375°F) vor. Schneiden Sie 2 mittelgroße Auberginen in 1/4 Zoll dicke Scheiben. Würzen Sie die Scheiben mit Salz und lassen Sie sie 30 Minuten stehen, um überschüssige Feuchtigkeit zu entziehen. Tupfen Sie die Auberginenscheiben mit Papiertüchern trocken. Wenden Sie jede Scheibe in Mehl, tauchen Sie sie in geschlagene Eier und bestreichen Sie sie mit Semmelbröseln. In einer großen Pfanne erhitzen Sie 2 Esslöffel Olivenöl bei mittlerer Hitze und braten Sie die Auberginenscheiben goldbraun an beiden Seiten. In einer Auflaufform schichten Sie die gebratenen Auberginenscheiben mit Marinara-Sauce und geriebenem Mozzarella-Käse. Wiederholen Sie die Schichten, bis alle Zutaten aufgebraucht sind, und enden Sie mit einer Schicht Käse. Backen Sie das Gericht 25-30 Minuten, bis der Käse geschmolzen und blubbert. Heiß servieren.",
         },
-        score: 0.9648115,
+        score: 0.96468127,
     },
     SearchResult {
         document: Document {
             id: "BBQ-Hähnchenflügel",
             contents: "Um BBQ-Hähnchenflügel zuzubereiten, heizen Sie Ihren Ofen auf 200°C (400°F) vor. Geben Sie 900 g Hähnchenflügel in eine große Schüssel und vermengen Sie sie mit 2 Esslöffeln Pflanzenöl, Salz und Pfeffer. Verteilen Sie die Flügel auf einem mit Backpapier ausgelegten Backblech. Backen Sie die Flügel im vorgeheizten Ofen 25-30 Minuten lang, wobei Sie sie zur Hälfte wenden, bis die Flügel goldbraun und knusprig sind. Nehmen Sie die Flügel aus dem Ofen und wenden Sie sie in Ihrer Lieblings-BBQ-Sauce. Legen Sie die Flügel für weitere 5 Minuten in den Ofen, um die Sauce festzusetzen. Heiß servieren, mit zusätzlicher Sauce an der Seite.",
         },
-        score: 1.0842069,
+        score: 1.084083,
     },
     SearchResult {
         document: Document {
             id: "Bananenbrot",
             contents: "Um Bananenbrot zu machen, heizen Sie den Ofen auf 175°C vor. In einer großen Schüssel 3 reife Bananen mit einer Gabel zerdrücken. Rühren Sie 1/3 Tasse geschmolzene Butter, 1/2 Tasse Zucker, 1 geschlagenes Ei und 1 Teelöffel Vanilleextrakt ein. In einer separaten Schüssel 1 1/2 Tassen Mehl, 1 Teelöffel Natron und eine Prise Salz vermengen. Die trockenen Zutaten nach und nach zu den nassen Zutaten geben und rühren, bis sie gerade so vermischt sind. Den Teig in eine gefettete Kastenform gießen und 60 Minuten backen, oder bis ein Zahnstocher, der in die Mitte gesteckt wird, sauber herauskommt. Lassen Sie das Brot 10 Minuten in der Form abkühlen, bevor Sie es auf ein Kuchengitter legen, um es vollständig abzukühlen.",
         },
-        score: 0.99957216,
+        score: 0.9994433,
     },
     SearchResult {
         document: Document {
             id: "Blaubeermuffins",
             contents: "Um Blaubeermuffins zu machen, heizen Sie Ihren Ofen auf 190°C vor und legen Sie eine Muffinform mit Papierförmchen aus. In einer großen Schüssel 1 1/2 Tassen Mehl, 3/4 Tasse Zucker, 1/2 Teelöffel Salz und 2 Teelöffel Backpulver vermengen. In einer separaten Schüssel 1/3 Tasse Pflanzenöl, 1 großes Ei und 1/3 Tasse Milch vermischen. Die nassen Zutaten zu den trockenen Zutaten geben und rühren, bis sie gerade so vermischt sind. Vorsichtig 1 Tasse frische oder gefrorene Blaubeeren unterheben. Den Teig gleichmäßig in die Muffinform verteilen und 20-25 Minuten backen, oder bis ein Zahnstocher in der Mitte sauber herauskommt. Lassen Sie die Muffins einige Minuten in der Form abkühlen, bevor Sie sie auf ein Gitter legen, um sie vollständig abzukühlen.",
         },
-        score: 0.9648115,
+        score: 0.96468127,
     },
     SearchResult {
         document: Document {
             id: "Gefüllte Paprika",
             contents: "Um gefüllte Paprika zu machen, heizen Sie Ihren Ofen auf 190°C vor. Schneiden Sie die Oberseiten von 4 Paprikaschoten ab und entfernen Sie die Kerne. In einer großen Pfanne 1 Esslöffel Olivenöl bei mittlerer Hitze erhitzen. Fügen Sie 1 gewürfelte Zwiebel und 2 gehackte Knoblauchzehen hinzu und braten Sie, bis sie weich sind. Geben Sie 450 g Hackfleisch hinzu und braten Sie es, bis es braun ist. Überschüssiges Fett abgießen. 1 Tasse gekochten Reis, 1 Dose gewürfelte Tomaten, Salz, Pfeffer und 1 Teelöffel italienische Gewürze einrühren. Jede Paprika mit der Fleischmischung füllen und in eine Auflaufform stellen. Mit geriebenem Käse bestreuen und mit Folie abdecken. 25-30 Minuten backen, dann die Folie entfernen und weitere 10 Minuten backen, bis der Käse goldbraun ist.",
         },
-        score: 1.3532338,
+        score: 1.3531057,
     },
     SearchResult {
         document: Document {
             id: "Hähnchen-Parmesan",
             contents: "Um Hähnchen-Parmesan zu machen, heizen Sie Ihren Ofen auf 200°C vor. Würzen Sie 2 Hähnchenbrustfilets ohne Haut und Knochen mit Salz und Pfeffer. Wälzen Sie jedes Hähnchenbrustfilet in Mehl, tauchen Sie es dann in geschlagene Eier und schließlich in Semmelbrösel, die mit geriebenem Parmesan gemischt wurden. In einer großen Pfanne 2 Esslöffel Olivenöl bei mittlerer Hitze erhitzen. Braten Sie das Hähnchen 3-4 Minuten auf jeder Seite, bis es goldbraun ist. Legen Sie das Hähnchen in eine Auflaufform und bedecken Sie es mit Marinara-Sauce und geriebenem Mozzarella. 15-20 Minuten backen, bis der Käse geschmolzen und sprudelnd ist. Heiß servieren, über Spaghetti oder Ihrer Lieblingspasta.",
         },
-        score: 1.0842069,
+        score: 1.0911913,
     },
     SearchResult {
         document: Document {
             id: "Knoblauchbrot",
             contents: "Um Knoblauchbrot zu machen, heizen Sie Ihren Ofen auf 175°C (350°F) vor. In einer kleinen Schüssel mischen Sie 1/2 Tasse weiche Butter, 3 gehackte Knoblauchzehen und 2 Esslöffel gehackte frische Petersilie. Schneiden Sie ein Baguette der Länge nach in zwei Hälften. Bestreichen Sie die Schnittseiten des Brotes gleichmäßig mit der Knoblauchbutter-Mischung. Legen Sie die Brothälften auf ein Backblech und backen Sie sie 10-12 Minuten lang, bis die Ränder goldbraun und knusprig sind. Für extra käsiges Knoblauchbrot streuen Sie geriebenen Mozzarella oder Parmesan über das Brot und backen es weitere 3-5 Minuten, bis der Käse geschmolzen und blubbernd ist. Schneiden und warm servieren.",
         },
-        score: 1.4410969,
+        score: 1.4409798,
     },
     SearchResult {
         document: Document {
             id: "Kürbiskuchen",
             contents: "Um Kürbiskuchen zu machen, heizen Sie Ihren Ofen auf 220°C (425°F) vor. In einer großen Schüssel verquirlen Sie 2 Tassen Kürbispüree aus der Dose, 1 Dose gesüßte Kondensmilch, 2 große Eier, 1 Teelöffel Zimt, 1/2 Teelöffel gemahlenen Ingwer, 1/4 Teelöffel gemahlene Nelken und 1/2 Teelöffel Salz. Gießen Sie die Mischung in eine ungebackene 23 cm (9-Zoll) Kuchenkruste. Backen Sie den Kuchen 15 Minuten, reduzieren Sie dann die Ofentemperatur auf 175°C (350°F) und backen Sie weitere 35-40 Minuten, oder bis ein Messer in der Mitte sauber herauskommt. Lassen Sie den Kuchen vollständig abkühlen, bevor Sie ihn mit Schlagsahne servieren.",
         },
-        score: 1.4046171,
+        score: 1.4044952,
     },
     SearchResult {
         document: Document {
             id: "Lasagne",
             contents: "Um Lasagne zuzubereiten, heizen Sie den Ofen auf 190°C (375°F) vor. Kochen Sie 12 Lasagne-Nudeln nach Packungsanweisung. In einer großen Pfanne braten Sie 1 Pfund Hackfleisch mit 1 gewürfelten Zwiebel und 2 gehackten Knoblauchzehen an. Lassen Sie das überschüssige Fett ab und rühren Sie 1 Glas Marinara-Sauce ein, lassen Sie es 10 Minuten köcheln. In einer separaten Schüssel mischen Sie 1 Tasse Ricotta-Käse mit 1 geschlagenen Ei und 1/2 Tasse geriebenem Parmesan. Zum Zusammenstellen der Lasagne verteilen Sie eine dünne Schicht Fleischsauce auf dem Boden einer Auflaufform. Schichten Sie 3 Nudeln darauf, dann ein Drittel der Ricotta-Mischung und geriebenen Mozzarella-Käse. Wiederholen Sie die Schichten und enden Sie mit einer letzten Schicht Fleischsauce und Mozzarella. Decken Sie die Form mit Folie ab und backen Sie sie 25 Minuten, dann nehmen Sie die Folie ab und backen Sie weitere 15 Minuten, bis der Käse geschmolzen und blubbernd ist. Lassen Sie die Lasagne 10 Minuten abkühlen, bevor Sie sie schneiden und servieren.",
         },
-        score: 1.2329572,
+        score: 1.2328176,
     },
     SearchResult {
         document: Document {
             id: "Schokoladenkekse",
             contents: "Um klassische Schokoladenkekse zu machen, heizen Sie den Ofen auf 175°C (350°F) vor. In einer großen Schüssel verrühren Sie 1 Tasse weiche Butter, 1 Tasse weißen Zucker und 1 Tasse braunen Zucker, bis die Masse glatt ist. Schlagen Sie 2 Eier einzeln unter, dann rühren Sie 2 Teelöffel Vanilleextrakt ein. In einer separaten Schüssel vermischen Sie 3 Tassen Mehl, 1 Teelöffel Natron und 1/2 Teelöffel Salz. Nach und nach mischen Sie die trockenen Zutaten unter die feuchte Mischung. Heben Sie 2 Tassen halbsüße Schokoladenchips unter. Geben Sie Esslöffel große Teigbällchen auf ungefettete Backbleche. Backen Sie sie 10-12 Minuten lang, bis die Ränder goldbraun sind. Lassen Sie die Kekse einige Minuten auf dem Backblech abkühlen, bevor Sie sie auf ein Kuchengitter legen, um sie vollständig abzukühlen.",
         },
-        score: 0.9648115,
+        score: 0.96468127,
     },
     SearchResult {
         document: Document {
             id: "Schokoladenkuchen",
             contents: "Um einen saftigen Schokoladenkuchen zu machen, heizen Sie Ihren Ofen auf 175°C (350°F) vor. Fetten und mehlen Sie zwei 23 cm (9-Zoll) runde Kuchenformen. In einer großen Schüssel verrühren Sie 2 Tassen Zucker, 1 3/4 Tassen Mehl, 3/4 Tasse Kakaopulver, 1 1/2 Teelöffel Backpulver, 1 1/2 Teelöffel Natron und 1 Teelöffel Salz. Fügen Sie 2 Eier, 1 Tasse Milch, 1/2 Tasse Pflanzenöl und 2 Teelöffel Vanilleextrakt hinzu. Schlagen Sie die Mischung 2 Minuten lang bei mittlerer Geschwindigkeit. Rühren Sie 1 Tasse kochendes Wasser ein (der Teig wird dünnflüssig). Gießen Sie den Teig gleichmäßig in die vorbereiteten Formen. Backen Sie 30-35 Minuten oder bis ein Zahnstocher in der Mitte sauber herauskommt. Lassen Sie die Kuchen 10 Minuten in den Formen abkühlen, dann auf einem Kuchengitter vollständig abkühlen, bevor Sie sie glasieren.",
         },
-        score: 0.87366533,
+        score: 0.87353355,
     },
     SearchResult {
         document: Document {
             id: "Überbackene Ziti",
             contents: "Um überbackene Ziti zuzubereiten, heizen Sie den Ofen auf 190°C (375°F) vor. Kochen Sie 450 g Ziti-Nudeln nach Packungsanweisung, lassen Sie sie abtropfen und stellen Sie sie beiseite. In einer großen Pfanne braten Sie 450 g italienische Wurst bei mittlerer Hitze an und zerbröckeln sie in kleine Stücke. Rühren Sie 1 Glas Marinara-Sauce ein und lassen Sie es 5 Minuten köcheln. In einer großen Schüssel mischen Sie die gekochten Ziti mit der Wurstmischung, 1 Tasse Ricotta-Käse und 1/2 Tasse geriebenem Parmesan. Geben Sie die Mischung in eine gefettete Auflaufform und bestreuen Sie sie mit 2 Tassen geriebenem Mozzarella. Backen Sie 25-30 Minuten, bis der Käse geschmolzen und blubbernd ist. Lassen Sie die Ziti einige Minuten abkühlen, bevor Sie sie servieren.",
         },
-        score: 0.97612655,
+        score: 0.97599685,
     },
 ]

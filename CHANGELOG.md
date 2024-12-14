@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2024-12-14
+
+### Added
+
+- `SearchResult` is now `Clone`.
+- Add WebAssembly [bm25-demo](https://michael-jb.github.io/bm25-demo) to README.
+- Miscellaneous documentation improvements.
+
 ## [2.1.0] - 2024-11-16
 
 ### Added

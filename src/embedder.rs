@@ -114,8 +114,8 @@ impl TokenEmbedder for usize {
     }
 }
 
-/// Embeds text into the D-dimensional BM25 embedding space. D is the type of the token embedder
-/// and T is the type of the tokenizer.
+/// Creates sparse embeddings from text. D is the type of the token embedder and T is the type of
+/// the tokenizer.
 #[derive(Debug)]
 pub struct Embedder<D = DefaultTokenEmbedder, T = DefaultTokenizer> {
     tokenizer: T,
@@ -207,7 +207,7 @@ impl<D, T> EmbedderBuilder<D, T> {
     }
 
     /// Constructs a new EmbedderBuilder with its average document length fit to the given corpus.
-    /// Use this if you have the full corpus (or a sample of it) available in advance.The embedder
+    /// Use this if you have the full corpus (or a sample of it) available in advance. The embedder
     /// will assume the given tokenizer. Use the `parallelism` feature to speed the fitting process
     /// up for large corpora.
     pub fn with_tokenizer_and_fit_to_corpus(tokenizer: T, corpus: &[&str]) -> EmbedderBuilder<D, T>

@@ -38,7 +38,7 @@ impl<K> Document<K> {
 }
 
 /// A search result, containing a document and its BM25 score.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct SearchResult<K> {
     /// The document that was found.
     pub document: Document<K>,

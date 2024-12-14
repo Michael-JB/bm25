@@ -9,15 +9,17 @@ utilities at three levels of abstraction:
 1. **BM25 Embedder**: Embeds text into a sparse vector space for information retrieval. You can use
     these embeddings with vector databases, e.g., Qdrant, Pinecone and Milvus, etc.
 2. **BM25 Scorer**: Efficiently scores the relevance of a query embedding to document embeddings.
-3. **BM25 Search Engine**: A fast, light-weight, in-memory full-text search engine built on top of
+3. **BM25 Search Engine**: A fast, light-weight, in-memory keyword search engine built on top of
     the embedder and scorer.
+
+See [bm25-demo](https://michael-jb.github.io/bm25-demo) for a WebAssembly demo of the search engine.
 
 ## Features
 
-- Fast
-- Language-detecting tokenizer using industry-standard NLP techniques
-- Parallelism for fast batch-fitting
+- Multilingual tokenizer with stemming, stop word removal and unicode normalization
+- Language detection
 - Full access to BM25 parameters
+- Parallelism for fast batch-fitting
 - Modular and customisable
 - Configurable via compile-time features
 
@@ -28,14 +30,13 @@ query to documents in a corpus. You can make this scoring more efficient by pre-
 'sparse embedding' of each document. You can use these sparse embeddings directly, or upload them
 to a vector database and query them from there.
 
-BM25 assumes that you know the average (meaningful) word count of your documents ahead of time. This
+BM25 assumes that you know the average (meaningful) token count of your documents ahead of time. This
 crate provides utilities to compute this. If this assumption doesn't hold for your use-case, you
 have two options: (1) make a sensible guess (e.g. based on a sample); or (2) configure the algorithm
-to disregard document length. The former is recommended if most of your documents are around the
-same size.
+to disregard document length. The former is recommended.
 
 BM25 has three parameters: `b`, `k1` and `avgdl`. These terms match the formula given on
-Wikipedia. `avgdl` ('average document length') is the aforementioned average meaningful word count;
+Wikipedia. `avgdl` ('average document length') is the aforementioned average meaningful token count;
 you should always provide a value for this and the crate can fit this for you. `b` controls
 document length normalization; `0` means no normalisation (length will not affect score) while `1`
 means full normalisation. If you know `avgdl`, `0.75` is typically a good choice for `b`. If
@@ -56,7 +57,10 @@ or [SearchEngine](#search).
 
 ### Embed
 
-The best way to embed some text is to fit an embedder to your corpus. 
+You can generate sparse embeddings from text using this crate. You can store and query these in
+most vector databases, or use them directly. The best way to embed some text is to fit an embedder
+to your corpus.
+
 ```rust
 use bm25::{Embedder, EmbedderBuilder, Embedding, TokenEmbedding, Language};
 
@@ -162,15 +166,16 @@ use bm25::{DefaultTokenizer, Language, Tokenizer};
 let tokenizer = DefaultTokenizer::builder()
     .language_mode(Language::English)
     .normalization(true) // Normalize unicode (e.g., 'é' -> 'e', '🍕' -> 'pizza', etc.)
-    .stopwords(false) // Remove common words with little meaning (e.g., 'the', 'and', etc.)
-    .stemming(false) // Reduce words to their root form (e.g., 'running' -> 'run')
+    .stopwords(true) // Remove common words with little meaning (e.g., 'the', 'and', 'of', etc.)
+    .stemming(true) // Reduce words to their root form (e.g., 'running' -> 'run')
     .build();
 
-let text = "Slice of 🍕";
+let text = "Slices of 🍕";
 
 let tokens = tokenizer.tokenize(text);
 
-assert_eq!(tokens, vec!["slice", "of", "pizza"]);
+// 'slices' is stemmed to 'slice', 'of' is a stopword, and '🍕' is normalized to 'pizza'
+assert_eq!(tokens, vec!["slice", "pizza"]);
 ```
 
 While this works well for most languages and use-cases, this crate makes it easy for you to provide
@@ -180,7 +185,7 @@ your own tokenizer. All you have to do is implement the `Tokenizer` trait.
 use bm25::{EmbedderBuilder, Embedding, Tokenizer};
 
 #[derive(Default)]
-struct MyTokenizer {}
+struct MyTokenizer;
 
 // Tokenize on occurrences of "T"
 impl Tokenizer for MyTokenizer {
@@ -259,7 +264,8 @@ assert_eq!(
 
 This crate provides a BM25 scorer that can efficiently score the relevance of a query embedding to
 document embeddings. The scorer manages the complexity of maintaining token frequencies and indexes,
-as well as the actual scoring.
+as well as the actual scoring. Use this if you need BM25 scoring, but want to manage the lifecycle
+of raw documents yourself.
 
 ```rust
 use bm25::{Embedder, EmbedderBuilder, Language, Scorer, ScoredDocument};
@@ -305,7 +311,8 @@ assert_eq!(
 
 ### Search
 
-This crate includes a light-weight, in-memory full-text search engine built on top of the embedder.
+This crate includes a light-weight, in-memory keyword search engine built on top of the embedder
+and scorer. See [bm25-demo](https://michael-jb.github.io/bm25-demo) for a WebAssembly demo.
 
 ```rust
 use bm25::{Document, Language, SearchEngineBuilder, SearchResult};

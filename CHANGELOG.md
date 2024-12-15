@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Use `unicode-segmentation` for better word splitting. Decimal numbers and words with apostrophes
+  no longer generate multiple tokens. This is a (minor) breaking change for the default tokenizer.
+
+### Added
+
+- `DefaultTokenizerBuilder` is now `Default`.
+
 ## [2.1.1] - 2024-12-14
 
 ### Added

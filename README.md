@@ -157,7 +157,7 @@ let embedder: Embedder = EmbedderBuilder::with_avgdl(64.0)
 #### Tokenizer
 
 The embedder uses a tokenizer to convert text into a sequence of tokens to embed. The default
-tokenizer detects language, normalizes unicode, splits on whitespace and punctuation, removes stop
+tokenizer detects language, normalizes unicode, splits on unicode word boundaries, removes stop
 words and stems the remaining words. You can customise its behaviour by using the builder.
 
 ```rust

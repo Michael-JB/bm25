@@ -264,18 +264,18 @@ impl DefaultTokenizer {
         Language::try_from(whichlang::detect_language(text)).ok()
     }
 
-    fn split_by_whitespace_and_punctuation(text: &str) -> impl Iterator<Item = &'_ str> {
-        text.split(|c: char| c.is_whitespace() || c.is_ascii_punctuation())
-            .filter(|s| !s.is_empty())
+    fn split_on_word_boundaries(text: &str) -> impl Iterator<Item = &'_ str> {
+        use unicode_segmentation::UnicodeSegmentation;
+        text.unicode_words().filter(|s| !s.is_empty())
     }
 
     fn _tokenize(&self, input_text: &str, components: &Components) -> Vec<String> {
         // Normalize
-        let text = (components.normalizer)(&input_text);
+        let text = (components.normalizer)(input_text);
         // Transform to lowercase (required for stemming and stopwords)
         let text = text.to_lowercase();
         // Split
-        let tokens = Self::split_by_whitespace_and_punctuation(&text);
+        let tokens = Self::split_on_word_boundaries(&text);
         // Remove stopwords
         let tokens = tokens.filter(|token| !components.stopwords.contains(*token));
         // Stem
@@ -291,14 +291,12 @@ impl DefaultTokenizer {
             return Vec::new();
         }
         match &self.resources {
-            Resources::Static(components) => {
-                return self._tokenize(input_text, components);
-            }
+            Resources::Static(components) => self._tokenize(input_text, components),
             #[cfg(feature = "language_detection")]
             Resources::Dynamic(settings) => {
                 let detected_language = Self::detect_language(input_text);
                 let components = Components::new(settings.clone(), detected_language.as_ref());
-                return self._tokenize(input_text, &components);
+                self._tokenize(input_text, &components)
             }
         }
     }
@@ -321,6 +319,12 @@ pub struct DefaultTokenizerBuilder {
     normalization: bool,
     stemming: bool,
     stopwords: bool,
+}
+
+impl Default for DefaultTokenizerBuilder {
+    fn default() -> Self {
+        DefaultTokenizerBuilder::new()
+    }
 }
 
 impl DefaultTokenizerBuilder {
@@ -417,12 +421,12 @@ mod tests {
 
     #[test]
     fn it_removes_whitespace() {
-        let text = "\tspace\r\nstation\n ";
+        let text = "\tspace\r\nstation\n space       station";
         let tokenizer = DefaultTokenizer::new(Language::English);
 
         let tokens = tokenizer.tokenize(text);
 
-        assert_eq!(tokens, vec!["space", "station"]);
+        assert_eq!(tokens, vec!["space", "station", "space", "station"]);
     }
 
     #[test]
@@ -437,12 +441,29 @@ mod tests {
 
     #[test]
     fn it_keeps_numbers() {
-        let text = "42 1337";
+        let text = "42 1337 3.14";
         let tokenizer = DefaultTokenizer::new(Language::English);
 
         let tokens = tokenizer.tokenize(text);
 
-        assert_eq!(tokens, vec!["42", "1337"]);
+        assert_eq!(tokens, vec!["42", "1337", "3.14"]);
+    }
+
+    #[test]
+    fn it_keeps_contracted_words() {
+        let text = "can't you're won't let's couldn't've";
+        let tokenizer = DefaultTokenizer::builder()
+            .language_mode(Language::English)
+            .stemming(false)
+            .stopwords(false)
+            .build();
+
+        let tokens = tokenizer.tokenize(text);
+
+        assert_eq!(
+            tokens,
+            vec!["can't", "you're", "won't", "let's", "couldn't've"]
+        );
     }
 
     #[test]
@@ -559,7 +580,7 @@ mod tests {
 
     #[test]
     fn it_does_not_remove_stopwords_when_stopwords_disabled() {
-        let text = "i my myself we you you're";
+        let text = "i my myself we you have";
         let tokenizer = DefaultTokenizer::builder()
             .language_mode(Language::English)
             .stopwords(false)
@@ -567,7 +588,7 @@ mod tests {
 
         let tokens = tokenizer.tokenize(text);
 
-        assert_eq!(tokens, vec!["i", "my", "myself", "we", "you", "you", "re",]);
+        assert_eq!(tokens, vec!["i", "my", "myself", "we", "you", "have"]);
     }
 
     #[test]

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1] - 2025-03-03
+
+### Changed
+
+- Bump `stop-words` from 0.8.0 to 0.8.1
+- Bump `whichlang` from 0.1.0 to 0.1.1
+- Bump `cached` from 0.54.0 to 0.55.1
+
 ## [2.2.0] - 2024-12-15
 
 ### Changed

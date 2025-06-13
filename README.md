@@ -222,6 +222,7 @@ values are `usize`, `u32` and `u64`. You can also use your own type (and inject 
 function) by implementing the `TokenEmbedder` trait.
 
 ```rust
+use serde::{Deserialize, Serialize};
 use bm25::{EmbedderBuilder, TokenEmbedder};
 
 let text = "cup of tea";
@@ -242,7 +243,7 @@ assert_eq!(
     [3288102823240002853, 7123809554392261272]
 );
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
 struct MyType(u32);
 impl TokenEmbedder for MyType {
     type EmbeddingSpace = Self;

@@ -1,4 +1,5 @@
 use crate::embedder::{DefaultEmbeddingSpace, Embedding};
+use serde::{Deserialize, Serialize};
 use std::{
     cmp::Ordering,
     collections::{HashMap, HashSet},
@@ -17,8 +18,8 @@ pub struct ScoredDocument<K> {
 
 /// Efficiently scores the relevance of a query embedding to document embeddings using BM25.
 /// K is the type of the document id and D is the type of the embedding space.
-#[derive(Default)]
-pub struct Scorer<K, D = DefaultEmbeddingSpace> {
+#[derive(Default, Serialize, Deserialize)]
+pub struct Scorer<K: Eq + Hash, D: Eq + Hash = DefaultEmbeddingSpace> {
     // A mapping from document ids to the document embeddings.
     embeddings: HashMap<K, Embedding<D>>,
     // A mapping from token indices to the set of documents that contain that token.

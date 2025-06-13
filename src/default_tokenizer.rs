@@ -1,5 +1,6 @@
 use cached::proc_macro::cached;
 use rust_stemmers::{Algorithm as StemmingAlgorithm, Stemmer};
+use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
     collections::HashSet,
@@ -157,7 +158,7 @@ fn get_stemmer(language: &Language) -> Stemmer {
     Stemmer::create(language.into())
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct Settings {
     stemming: bool,
     stopwords: bool,
@@ -219,6 +220,50 @@ enum Resources {
 
 pub struct DefaultTokenizer {
     resources: Resources,
+}
+
+impl Serialize for DefaultTokenizer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let settings = match &self.resources {
+            Resources::Static(components) => components.settings.clone(),
+            #[cfg(feature = "language_detection")]
+            Resources::Dynamic(settings) => settings.clone(),
+        };
+        let variant: u8 = match &self.resources {
+            Resources::Static(_) => 0,
+            #[cfg(feature = "language_detection")]
+            Resources::Dynamic(_) => 1,
+        };
+
+        let ser = (variant, settings);
+        ser.serialize(serializer)
+    }
+}
+
+impl<'a> Deserialize<'a> for DefaultTokenizer {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'a>,
+    {
+        #[allow(unused_variables)]
+        let (variant, settings): (u8, Settings) = Deserialize::deserialize(deserializer)?;
+
+        let resources = match variant {
+            0 => Resources::Static(Components::new(settings, None)),
+            #[cfg(feature = "language_detection")]
+            1 => Resources::Dynamic(settings),
+            _ => {
+                return Err(serde::de::Error::custom(
+                    "Unknown variant for DefaultTokenizer",
+                ))
+            }
+        };
+
+        Ok(DefaultTokenizer { resources })
+    }
 }
 
 impl Debug for DefaultTokenizer {

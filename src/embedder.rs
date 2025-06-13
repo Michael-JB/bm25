@@ -2,6 +2,7 @@ use crate::tokenizer::Tokenizer;
 use fxhash::{hash, hash32, hash64};
 #[cfg(feature = "parallelism")]
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fmt::{self, Debug, Display},
@@ -35,7 +36,7 @@ pub struct NoDefaultTokenizer {}
 pub type DefaultTokenizer = NoDefaultTokenizer;
 
 /// Represents a token embedded in a D-dimensional space.
-#[derive(PartialEq, Debug, Clone, PartialOrd)]
+#[derive(PartialEq, Debug, Clone, PartialOrd, Serialize, Deserialize)]
 pub struct TokenEmbedding<D = DefaultEmbeddingSpace> {
     /// The index of the token in the embedding space.
     pub index: D,
@@ -50,7 +51,7 @@ impl Display for TokenEmbedding {
 }
 
 /// Represents a document embedded in a D-dimensional space.
-#[derive(PartialEq, Debug, Clone, PartialOrd)]
+#[derive(PartialEq, Debug, Clone, PartialOrd, Serialize, Deserialize)]
 pub struct Embedding<D = DefaultEmbeddingSpace>(pub Vec<TokenEmbedding<D>>);
 
 impl<D> Deref for Embedding<D> {
@@ -88,7 +89,7 @@ impl<D: Debug> Display for Embedding<D> {
 /// A trait for embedding. Implement this to customise the embedding space and function.
 pub trait TokenEmbedder {
     /// The output type of the embedder, i.e., the embedding space.
-    type EmbeddingSpace;
+    type EmbeddingSpace: Eq + Hash + Serialize + for<'a> Deserialize<'a>;
     /// Embeds a token into the embedding space.
     fn embed(token: &str) -> Self::EmbeddingSpace;
 }
@@ -116,7 +117,7 @@ impl TokenEmbedder for usize {
 
 /// Creates sparse embeddings from text. D is the type of the token embedder and T is the type of
 /// the tokenizer.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Embedder<D = DefaultTokenEmbedder, T = DefaultTokenizer> {
     tokenizer: T,
     k1: f32,
@@ -396,7 +397,7 @@ mod tests {
 
     #[test]
     fn it_allows_customisation_of_embedder() {
-        #[derive(Eq, PartialEq, Hash, Clone, Debug)]
+        #[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
         struct MyType(u32);
 
         impl TokenEmbedder for MyType {

@@ -4,6 +4,7 @@ use crate::{
     scorer::{ScoredDocument, Scorer},
     Tokenizer,
 };
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fmt::{self, Debug, Display},
@@ -49,7 +50,9 @@ pub struct SearchResult<K> {
 
 /// A search engine that ranks documents with BM25. K is the type of the document id, D is the
 /// type of the token embedder and T is the type of the tokenizer.
-pub struct SearchEngine<K, D: TokenEmbedder = DefaultTokenEmbedder, T = DefaultTokenizer> {
+#[derive(Serialize, Deserialize)]
+pub struct SearchEngine<K: Eq + Hash, D: TokenEmbedder = DefaultTokenEmbedder, T = DefaultTokenizer>
+{
     // The embedder used to convert documents into embeddings.
     embedder: Embedder<D, T>,
     // A scorer for document embeddings.
@@ -58,7 +61,7 @@ pub struct SearchEngine<K, D: TokenEmbedder = DefaultTokenEmbedder, T = DefaultT
     documents: HashMap<K, String>,
 }
 
-impl<K: Debug, D: TokenEmbedder + Debug, T: Debug> Debug for SearchEngine<K, D, T> {
+impl<K: Debug + Eq + Hash, D: TokenEmbedder + Debug, T: Debug> Debug for SearchEngine<K, D, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -514,5 +517,23 @@ mod tests {
         insta::with_settings!({snapshot_path => "../snapshots"}, {
             assert_debug_snapshot!(results);
         });
+    }
+
+    #[test]
+    fn it_can_persist() {
+        // Arrange
+        let search_engine = create_recipe_search_engine("recipes_en.csv", Language::English);
+        let mut expected_search_result = search_engine.search("bake", None);
+        expected_search_result.sort_by_key(|result| result.document.id.clone());
+
+        // Act
+        let serialized = bincode::serialize(&search_engine).unwrap();
+        let deserialized: SearchEngine<String, u32> = bincode::deserialize(&serialized).unwrap();
+        let mut actual_search_result = deserialized.search("bake", None);
+        actual_search_result.sort_by_key(|result| result.document.id.clone());
+
+        // Assert
+        assert_eq!(search_engine.documents, deserialized.documents);
+        assert_eq!(expected_search_result, actual_search_result);
     }
 }

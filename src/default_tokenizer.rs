@@ -1,5 +1,6 @@
 use cached::proc_macro::cached;
 use rust_stemmers::{Algorithm as StemmingAlgorithm, Stemmer};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
@@ -158,7 +159,8 @@ fn get_stemmer(language: &Language) -> Stemmer {
     Stemmer::create(language.into())
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug)]
 struct Settings {
     stemming: bool,
     stopwords: bool,
@@ -222,6 +224,7 @@ pub struct DefaultTokenizer {
     resources: Resources,
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for DefaultTokenizer {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -243,6 +246,7 @@ impl Serialize for DefaultTokenizer {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'a> Deserialize<'a> for DefaultTokenizer {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

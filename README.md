@@ -413,6 +413,45 @@ parallelise this via the `parallelism` feature, which implements data parallelis
 cargo add bm25 --features parallelism
 ```
 
+### Serialization and deserialization of the search engine, scorer and embedder
+
+You can serialize and deserialize the search engine, scorer and embedder using
+the `serde` feature, which pulls in the `serde` crate as a dependency.
+
+```sh
+cargo add bm25 --features serde
+```
+
+You can then use your serialization front-end of choice (e.g., `serde_json`,
+`bincode`, etc.) to serialize and deserialize the objects in a format that
+makes sense for your use-case. For example, `bincode` is a good option for
+storing the search engine on disk.
+
+```rust
+use bm25::{SearchEngine, SearchEngineBuilder};
+
+use bm25::{Document, Language};
+
+let search_engine = SearchEngineBuilder::<u16>::with_documents(
+    Language::English,
+    [
+        Document {
+            id: 42,
+            contents: String::from("The answer to the ultimate question of life, the universe, and everything."),
+        },
+    ],
+)
+.build();
+
+let serialized = bincode::serialize(&search_engine).unwrap();
+
+// At this point, you could, e.g., write `serialized` bytes to a file
+
+let deserialized: SearchEngine<u16, u32> = bincode::deserialize(&serialized).unwrap();
+
+assert_eq!(deserialized.get(&42), search_engine.get(&42));
+```
+
 ## License
 
 [MIT License](https://github.com/Michael-JB/bm25/blob/main/LICENSE)

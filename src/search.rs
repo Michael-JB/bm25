@@ -4,6 +4,7 @@ use crate::{
     scorer::{ScoredDocument, Scorer},
     Tokenizer,
 };
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -50,7 +51,7 @@ pub struct SearchResult<K> {
 
 /// A search engine that ranks documents with BM25. K is the type of the document id, D is the
 /// type of the token embedder and T is the type of the tokenizer.
-#[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SearchEngine<K: Eq + Hash, D: TokenEmbedder = DefaultTokenEmbedder, T = DefaultTokenizer>
 {
     // The embedder used to convert documents into embeddings.
@@ -520,20 +521,23 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn it_can_persist() {
-        // Arrange
         let search_engine = create_recipe_search_engine("recipes_en.csv", Language::English);
-        let mut expected_search_result = search_engine.search("bake", None);
-        expected_search_result.sort_by_key(|result| result.document.id.clone());
 
-        // Act
-        let serialized = bincode::serialize(&search_engine).unwrap();
-        let deserialized: SearchEngine<String, u32> = bincode::deserialize(&serialized).unwrap();
-        let mut actual_search_result = deserialized.search("bake", None);
-        actual_search_result.sort_by_key(|result| result.document.id.clone());
+        let serialized_search_engine = bincode::serialize(&search_engine).unwrap();
+        let deserialized_search_engine: SearchEngine<String, u32> =
+            bincode::deserialize(&serialized_search_engine).unwrap();
 
-        // Assert
-        assert_eq!(search_engine.documents, deserialized.documents);
-        assert_eq!(expected_search_result, actual_search_result);
+        let mut expected_results = search_engine.search("bake", None);
+        let mut actual_results = deserialized_search_engine.search("bake", None);
+        // sort the results by document id to make the comparison deterministic
+        expected_results.sort_by_key(|result| result.document.id.clone());
+        actual_results.sort_by_key(|result| result.document.id.clone());
+        assert_eq!(expected_results, actual_results);
+        assert_eq!(
+            search_engine.documents,
+            deserialized_search_engine.documents
+        );
     }
 }

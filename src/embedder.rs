@@ -2,6 +2,7 @@ use crate::tokenizer::Tokenizer;
 use fxhash::{hash, hash32, hash64};
 #[cfg(feature = "parallelism")]
 use rayon::prelude::*;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -36,7 +37,8 @@ pub struct NoDefaultTokenizer {}
 pub type DefaultTokenizer = NoDefaultTokenizer;
 
 /// Represents a token embedded in a D-dimensional space.
-#[derive(PartialEq, Debug, Clone, PartialOrd, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub struct TokenEmbedding<D = DefaultEmbeddingSpace> {
     /// The index of the token in the embedding space.
     pub index: D,
@@ -51,7 +53,8 @@ impl Display for TokenEmbedding {
 }
 
 /// Represents a document embedded in a D-dimensional space.
-#[derive(PartialEq, Debug, Clone, PartialOrd, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(PartialEq, Debug, Clone, PartialOrd)]
 pub struct Embedding<D = DefaultEmbeddingSpace>(pub Vec<TokenEmbedding<D>>);
 
 impl<D> Deref for Embedding<D> {
@@ -86,10 +89,21 @@ impl<D: Debug> Display for Embedding<D> {
     }
 }
 
+// Not sure what to do about this. As I have a type conditional on a compile-time feature, I think
+// I run into problems here. E.g., crate `A` could depend on this crate _with_ the `serde` feature,
+// while crate `B` could depend on this crate _without_ the `serde` feature. Then, crate `C` could
+// depend on both `A` and `B`, and crate `A` would not compile (unless it happens to also derive
+// Serialize and Deserialize, but that would be a coincidence). Hmm.
+
 /// A trait for embedding. Implement this to customise the embedding space and function.
 pub trait TokenEmbedder {
     /// The output type of the embedder, i.e., the embedding space.
+    #[cfg(feature = "serde")]
     type EmbeddingSpace: Eq + Hash + Serialize + for<'a> Deserialize<'a>;
+    /// The output type of the embedder, i.e., the embedding space.
+    #[cfg(not(feature = "serde"))]
+    type EmbeddingSpace: Eq + Hash;
+
     /// Embeds a token into the embedding space.
     fn embed(token: &str) -> Self::EmbeddingSpace;
 }
@@ -117,7 +131,8 @@ impl TokenEmbedder for usize {
 
 /// Creates sparse embeddings from text. D is the type of the token embedder and T is the type of
 /// the tokenizer.
-#[derive(Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug)]
 pub struct Embedder<D = DefaultTokenEmbedder, T = DefaultTokenizer> {
     tokenizer: T,
     k1: f32,
@@ -397,7 +412,8 @@ mod tests {
 
     #[test]
     fn it_allows_customisation_of_embedder() {
-        #[derive(Eq, PartialEq, Hash, Clone, Debug, Serialize, Deserialize)]
+        #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+        #[derive(Eq, PartialEq, Hash, Clone, Debug)]
         struct MyType(u32);
 
         impl TokenEmbedder for MyType {

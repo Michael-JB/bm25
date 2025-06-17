@@ -22,7 +22,7 @@ pub struct Scorer<K, D = DefaultEmbeddingSpace> {
     // A mapping from document ids to the document embeddings.
     embeddings: HashMap<K, Embedding<D>>,
     // A mapping from token indices to the number of documents that contain that token.
-    token_frequencies: HashMap<D, u32>,
+    token_frequencies: HashMap<K, HashMap<D, u32>>,
     // A mapping from token indices to the set of documents that contain that token.
     inverted_token_index: HashMap<D, HashSet<K>>,
 }
@@ -49,11 +49,14 @@ where
         if self.embeddings.contains_key(document_id) {
             self.remove(document_id);
         }
+
+        let token_frequencies = self
+            .token_frequencies
+            .entry(document_id.clone())
+            .or_insert(HashMap::new());
+
         for token_index in embedding.indices() {
-            let token_frequency = self
-                .token_frequencies
-                .entry(token_index.clone())
-                .or_insert(0);
+            let token_frequency = token_frequencies.entry(token_index.clone()).or_insert(0);
             *token_frequency += 1;
             let documents_containing_token = self
                 .inverted_token_index
@@ -68,8 +71,10 @@ where
     pub fn remove(&mut self, document_id: &K) {
         if let Some(embedding) = self.embeddings.remove(document_id) {
             for token_index in embedding.indices() {
-                if let Some(token_frequency) = self.token_frequencies.get_mut(token_index) {
-                    *token_frequency -= 1;
+                if let Some(token_frequencies) = self.token_frequencies.get_mut(document_id) {
+                    if let Some(token_frequency) = token_frequencies.get_mut(token_index) {
+                        *token_frequency -= 1;
+                    }
                 }
                 if let Some(matches) = self.inverted_token_index.get_mut(token_index) {
                     matches.remove(document_id);
@@ -108,7 +113,11 @@ where
     }
 
     fn idf(&self, token_index: &D) -> f32 {
-        let token_frequency = *self.token_frequencies.get(token_index).unwrap_or(&0) as f32;
+        let token_frequency = self
+            .token_frequencies
+            .values()
+            .filter(|v| v.contains_key(token_index))
+            .count() as f32;
         let numerator = self.embeddings.len() as f32 - token_frequency + 0.5;
         let denominator = token_frequency + 0.5;
         (1f32 + (numerator / denominator)).ln()

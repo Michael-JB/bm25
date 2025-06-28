@@ -294,6 +294,7 @@ impl<D> EmbedderBuilder<D, DefaultTokenizer> {
 }
 
 #[cfg(test)]
+#[allow(missing_docs)]
 mod tests {
     use insta::assert_debug_snapshot;
 

@@ -21,8 +21,6 @@ pub struct ScoredDocument<K> {
 pub struct Scorer<K, D = DefaultEmbeddingSpace> {
     // A mapping from document ids to the document embeddings.
     embeddings: HashMap<K, Embedding<D>>,
-    // A mapping from token indices to the number of documents that contain that token.
-    token_frequencies: HashMap<D, u32>,
     // A mapping from token indices to the set of documents that contain that token.
     inverted_token_index: HashMap<D, HashSet<K>>,
 }
@@ -36,7 +34,6 @@ where
     pub fn new() -> Scorer<K, D> {
         Scorer {
             embeddings: HashMap::new(),
-            token_frequencies: HashMap::new(),
             inverted_token_index: HashMap::new(),
         }
     }
@@ -50,11 +47,6 @@ where
             self.remove(document_id);
         }
         for token_index in embedding.indices() {
-            let token_frequency = self
-                .token_frequencies
-                .entry(token_index.clone())
-                .or_insert(0);
-            *token_frequency += 1;
             let documents_containing_token = self
                 .inverted_token_index
                 .entry(token_index.clone())
@@ -68,9 +60,6 @@ where
     pub fn remove(&mut self, document_id: &K) {
         if let Some(embedding) = self.embeddings.remove(document_id) {
             for token_index in embedding.indices() {
-                if let Some(token_frequency) = self.token_frequencies.get_mut(token_index) {
-                    *token_frequency -= 1;
-                }
                 if let Some(matches) = self.inverted_token_index.get_mut(token_index) {
                     matches.remove(document_id);
                 }
@@ -108,7 +97,10 @@ where
     }
 
     fn idf(&self, token_index: &D) -> f32 {
-        let token_frequency = *self.token_frequencies.get(token_index).unwrap_or(&0) as f32;
+        let token_frequency = self
+            .inverted_token_index
+            .get(token_index)
+            .map_or(0, |documents| documents.len()) as f32;
         let numerator = self.embeddings.len() as f32 - token_frequency + 0.5;
         let denominator = token_frequency + 0.5;
         (1f32 + (numerator / denominator)).ln()
@@ -220,6 +212,25 @@ mod tests {
                 score: 0.6931472
             }]
         );
+    }
+
+    #[test]
+    fn it_does_not_score_frequent_terms_negatively() {
+        // In versions 2.2.1 and earlier, the IDF considered the total occurrences of a token where
+        // it should have considered the total number of documents containing the token. In
+        // instances where the occurrences exceeded the number of documents, the IDF (and therefore
+        // the score) would be negative.
+        // See this bug report for more information: https://github.com/Michael-JB/bm25/pull/20
+        let document_embeddings = vec![Embedding(vec![
+            TokenEmbedding::new(0, 1.5),
+            TokenEmbedding::new(0, 1.5),
+        ])];
+        let scorer = scorer_with_embeddings(&document_embeddings);
+        let query_embedding = Embedding(vec![TokenEmbedding::new(0, 1.0)]);
+
+        let matches = scorer.matches(&query_embedding);
+
+        assert!(matches[0].score >= 0.0);
     }
 
     #[test]

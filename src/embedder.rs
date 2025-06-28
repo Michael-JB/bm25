@@ -45,7 +45,7 @@ pub struct TokenEmbedding<D = DefaultEmbeddingSpace> {
 
 impl Display for TokenEmbedding {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -81,7 +81,7 @@ impl<D> Embedding<D> {
 
 impl<D: Debug> Display for Embedding<D> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -294,6 +294,7 @@ impl<D> EmbedderBuilder<D, DefaultTokenizer> {
 }
 
 #[cfg(test)]
+#[allow(missing_docs)]
 mod tests {
     use insta::assert_debug_snapshot;
 

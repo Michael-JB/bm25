@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix negative scoring of high-frequency terms. Scores returned by this version
+  will differ from the previous version, hence this is a minor version bump
+  rather than a patch. This closes the bug raised in
+  https://github.com/Michael-JB/bm25/pull/20. Thank you to
+  (hwiorn)[https://github.com/hwiorn] for this contribution! 
+
 ## [2.2.1] - 2025-03-03
 
 ### Changed

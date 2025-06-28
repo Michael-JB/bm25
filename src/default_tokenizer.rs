@@ -228,7 +228,7 @@ impl Debug for DefaultTokenizer {
             #[cfg(feature = "language_detection")]
             Resources::Dynamic(settings) => settings.clone(),
         };
-        write!(f, "DefaultTokenizer({:?})", settings)
+        write!(f, "DefaultTokenizer({settings:?})")
     }
 }
 

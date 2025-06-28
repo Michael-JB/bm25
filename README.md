@@ -291,7 +291,7 @@ for (i, document) in corpus.iter().enumerate() {
 let query_embedding = embedder.embed(query);
 
 let score = scorer.score(&0, &query_embedding);
-assert_eq!(score, Some(0.36260858));
+assert_eq!(score, Some(0.7046783));
 
 let matches = scorer.matches(&query_embedding);
 assert_eq!(
@@ -299,11 +299,11 @@ assert_eq!(
     vec![
         ScoredDocument {
             id: 2,
-            score: 0.4960082
+            score: 0.9639215
         },
         ScoredDocument {
             id: 0,
-            score: 0.36260858
+            score: 0.7046783
         }
     ]
 );
@@ -337,14 +337,14 @@ assert_eq!(
                 id: 2,
                 contents: String::from("The hedgehog impaled the orange orange."),
             },
-            score: 0.4904281,
+            score: 0.9530774,
         },
         SearchResult {
             document: Document {
                 id: 0,
                 contents: String::from("The rabbit munched the orange carrot."),
             },
-            score: 0.35667497,
+            score: 0.6931472,
         },
     ]
 );

@@ -7,13 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.1] - 2025-08-02
+
+### Changed
+
+- Bump `cached` from 0.55.1 to 0.56.0
+
 ## [2.3.0] - 2025-06-28
 
 ### Fixed
 
 - Fix negative scoring of high-frequency terms. Scores returned by this version
   will differ from the previous version, hence this is a minor version bump
-  rather than a patch. This closes the bug raised in
+  rather than a patch. Embeddings are unaffected. This closes the bug raised in
   https://github.com/Michael-JB/bm25/pull/20. Thank you to
   [hwiorn](https://github.com/hwiorn) for this contribution!
 

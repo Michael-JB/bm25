@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bump `rayon` from 0.10.0 to 0.11.0
+- Bump `stop-words` from 0.8.1 to 0.9.0
 
 ## [2.3.1] - 2025-08-02
 

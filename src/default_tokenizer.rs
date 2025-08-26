@@ -144,10 +144,10 @@ fn get_stopwords(language: Language, normalized: bool) -> HashSet<String> {
     match TryInto::<StopWordLanguage>::try_into(&language) {
         Err(_) => HashSet::new(),
         Ok(lang) => stop_words::get(lang)
-            .into_iter()
+            .iter()
             .map(|w| match normalized {
-                true => normalize(&w).into(),
-                false => w,
+                true => normalize(w).into(),
+                false => w.to_string(),
             })
             .collect(),
     }

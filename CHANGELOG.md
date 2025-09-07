@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.2] - 2025-09-07
+
 ### Changed
 
 - Bump `rayon` from 0.10.0 to 0.11.0

@@ -135,7 +135,7 @@ impl TryFrom<&Language> for StopWordLanguage {
     }
 }
 
-fn normalize(text: &str) -> Cow<str> {
+fn normalize(text: &str) -> Cow<'_, str> {
     deunicode::deunicode_with_tofu_cow(text, "[?]")
 }
 
